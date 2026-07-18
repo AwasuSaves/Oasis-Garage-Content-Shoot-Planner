@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,600;1,700;1,800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<style>
+html{scrollbar-color:#3A3A3A #0F0F0F}
+body{margin:0;background:#0F0F0F;color:#F5F5F5;font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
+::selection{background:#E02020;color:#fff}
+@keyframes dashmove{to{stroke-dashoffset:-36}}
+@keyframes pulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(2.8);opacity:0}}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</helmet>
+
+<nav style="position:sticky;top:0;z-index:50;background:rgba(15,15,15,.94);backdrop-filter:blur(10px);border-bottom:1px solid #3A3A3A">
+  <div style="max-width:1240px;margin:0 auto;display:flex;align-items:stretch;gap:20px;padding:0 20px;height:60px">
+    <button onClick="{{goHero}}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:0">
+      <span style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:21px;letter-spacing:1.5px;color:#F5F5F5;border-bottom:3px solid #E02020;padding-bottom:2px;white-space:nowrap">OASIS GARAGE</span>
+    </button>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:2px;overflow-x:auto;scrollbar-width:none">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="7">
+        <button onClick="{{n.go}}" style="background:none;border:none;border-bottom:3px solid {{n.line}};cursor:pointer;font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:1.5px;color:{{n.color}};padding:0 12px;white-space:nowrap">{{n.label}}</button>
+      </sc-for>
+    </div>
+  </div>
+</nav>
+
+<section id="hero" data-screen-label="Hero" style="background:linear-gradient(180deg,#141414 0%,#0F0F0F 100%);border-bottom:1px solid #3A3A3A">
+  <div style="max-width:1240px;margin:0 auto;padding:64px 20px 56px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:44px;align-items:center">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px;margin-bottom:14px">SHOOT 01 · OFFICIAL CALL SHEET</div>
+      <h1 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(60px,9vw,116px);line-height:.9;letter-spacing:-1px;margin:0 0 18px;text-transform:uppercase">Midnight<br>Run<span style="color:#E02020">.</span></h1>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#C8C8C8;letter-spacing:1px;margin-bottom:22px">SAT · JUL 18 2026 &nbsp;—&nbsp; CALL TIME 06:30</div>
+      <div style="display:inline-block;background:#E02020;color:#0F0F0F;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:20px;letter-spacing:2px;padding:8px 18px 8px 14px;margin-bottom:34px">BUILD IT. OWN IT. DRIVE IT.</div>
+      <div style="display:flex;flex-wrap:wrap">
+        <div style="border-left:1px solid #3A3A3A;padding:2px 26px 2px 16px"><div style="font-family:'Barlow Condensed';font-weight:800;font-size:40px;line-height:1">08</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1.5px">CREW</div></div>
+        <div style="border-left:1px solid #3A3A3A;padding:2px 26px 2px 16px"><div style="font-family:'Barlow Condensed';font-weight:800;font-size:40px;line-height:1">05</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1.5px">STOPS</div></div>
+        <div style="border-left:1px solid #3A3A3A;padding:2px 26px 2px 16px"><div style="font-family:'Barlow Condensed';font-weight:800;font-size:40px;line-height:1">06</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1.5px">LOOKS</div></div>
+        <div style="border-left:1px solid #3A3A3A;padding:2px 26px 2px 16px"><div style="font-family:'Barlow Condensed';font-weight:800;font-size:40px;line-height:1">07</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1.5px">CARS</div></div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6a6a6a;letter-spacing:.5px;margin-top:30px">// PLACEHOLDER PLAN — NAMES, TIMES, LOCATIONS &amp; CARS ARE INVENTED. SWAP IN THE REAL SHOOT.</div>
+    </div>
+    <div style="position:relative;border:1px solid #3A3A3A">
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#E02020;z-index:2"></div>
+      <div style="height:420px">
+        <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="hero-car" shape="rect" placeholder="HERO CAR SHOT — drop image" style="width:100%;height:100%;display:block" hint-size="100%,420px"></x-import>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="itinerary" data-screen-label="Itinerary" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">01 / ITINERARY</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Run of Show</h2>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#C8C8C8;letter-spacing:1px">{{ clockLabel }}</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <sc-for list="{{ stops }}" as="s" hint-placeholder-count="5">
+      <div id="stop-{{$index}}" onClick="{{s.pick}}" style="display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;background:{{s.cardBg}};border:1px solid {{s.cardBord}};padding:20px 22px;cursor:pointer;opacity:{{s.dim}};transition:border-color .2s,opacity .2s" style-hover="border-color:#E02020">
+        <div style="min-width:88px">
+          <div style="font-family:'Barlow Condensed';font-weight:800;font-size:34px;line-height:1">{{s.arrive}}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f;letter-spacing:1px;margin-top:4px">SHOOT {{s.win}}</div>
+        </div>
+        <div style="flex:1;min-width:220px">
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020">{{s.idx}}</span>
+            <span style="font-family:'Barlow Condensed';font-weight:700;font-size:26px;letter-spacing:1px">{{s.name}}</span>
+          </div>
+          <div style="font-size:14px;color:#C8C8C8;margin-top:6px">{{s.what}}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7a7a7a;letter-spacing:.5px;margin-top:8px">▸ {{s.addr}}</div>
+        </div>
+        <div style="margin-left:auto">
+          <span style="display:inline-block;background:{{s.bBg}};color:{{s.bCol}};border:1px solid {{s.bBord}};font-family:'Barlow Condensed';font-weight:700;font-size:14px;letter-spacing:2px;padding:6px 14px;animation:{{s.anim}}">{{s.bTxt}}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section id="map" data-screen-label="Road-trip map" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">02 / ROAD-TRIP MAP</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">The Route</h2>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a;letter-spacing:1px">DRAG TO ORBIT · SCROLL TO ZOOM · TAP A PIN</span>
+  </div>
+  <div style="position:relative;border:1px solid #3A3A3A;background:#131313">
+    <div style="position:absolute;top:12px;right:16px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5a5a5a;letter-spacing:1.5px;z-index:2;pointer-events:none">STYLIZED 3D · NOT TO SCALE</div>
+    <div style="height:clamp(380px,52vw,560px)">
+      <x-import component-from-global-scope="oasis-map-3d" from="./oasis-map-3d.js" stops="{{stopsJson}}" sel="{{selStr}}" prog="{{progStr}}" leg="{{legStr}}" motion="{{motionStr}}" style="width:100%;height:100%;display:block" hint-size="100%,560px"></x-import>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;border:1px solid #3A3A3A;border-top:none;background:#161616;padding:14px 18px">
+    <sc-if value="{{hasSel}}" hint-placeholder-val="{{false}}">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020;letter-spacing:1px">{{selIdx}} · {{selTime}}</span>
+      <span style="font-family:'Barlow Condensed';font-weight:700;font-size:20px;letter-spacing:1px">{{selName}}</span>
+      <span style="font-size:13px;color:#C8C8C8">{{selWhat}}</span>
+      <span style="flex:1"></span>
+      <span style="display:inline-flex;align-items:center;gap:8px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7a7a7a;letter-spacing:1.5px">AREA TYPE</span>
+        <select value="{{selType}}" onChange="{{onType}}" style="background:#1A1A1A;border:1px solid #3A3A3A;color:#F5F5F5;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px;padding:7px 10px;cursor:pointer;outline:none">
+          <sc-for list="{{ typeOpts }}" as="o" hint-placeholder-count="8">
+            <option value="{{o.v}}">{{o.label}}</option>
+          </sc-for>
+        </select>
+      </span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f;letter-spacing:1px">{{selCrew}} CREW · SEE CHECKLIST</span>
+    </sc-if>
+    <sc-if value="{{noSel}}" hint-placeholder-val="{{true}}">
+      <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1px"><span style="width:10px;height:10px;background:#E02020;display:inline-block"></span>DONE / ON SET</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1px"><span style="width:10px;height:10px;border:2px solid #E02020;display:inline-block"></span>UP NEXT</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1px"><span style="width:10px;height:10px;border:2px solid #4a4a4a;display:inline-block"></span>LATER</span>
+      <span style="flex:1"></span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6a6a6a;letter-spacing:1px">TAP A PIN — THE CAR DRIVES TO IT · SET ITS AREA TYPE</span>
+    </sc-if>
+  </div>
+</section>
+
+<section id="mood" data-screen-label="Creative direction board" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:22px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">03 / CREATIVE DIRECTION</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">The Vision</h2>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a;letter-spacing:1px">DROP REFS ONTO THE TILES</span>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap">
+    <sc-for list="{{ moodChips }}" as="c" hint-placeholder-count="4">
+      <button onClick="{{c.pick}}" style="background:{{c.bg}};color:{{c.col}};border:1px solid {{c.bord}};font-family:'Barlow Condensed';font-weight:700;font-size:14px;letter-spacing:2px;padding:7px 18px;cursor:pointer">{{c.label}}</button>
+    </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:14px;grid-auto-flow:dense">
+    <sc-for list="{{ moodCards }}" as="m" hint-placeholder-count="9">
+      <div style="background:#1A1A1A;border:1px solid #2c2c2c;display:flex;flex-direction:column" style-hover="border-color:#E02020">
+        <div style="height:{{m.h}}px">
+          <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{m.slot}}" shape="rect" placeholder="{{m.ph}}" style="width:100%;height:100%;display:block" hint-size="100%,200px"></x-import>
+        </div>
+        <div style="padding:14px 14px 16px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="background:{{m.tBg}};color:{{m.tCol}};border:1px solid {{m.tBord}};font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;padding:3px 8px">{{m.t}}</span>
+          </div>
+          <div style="font-family:'Barlow Condensed';font-weight:700;font-size:19px;letter-spacing:.5px;line-height:1.1">{{m.title}}</div>
+          <div style="font-size:13px;color:#C8C8C8;line-height:1.45;text-wrap:pretty">{{m.d}}</div>
+          <a href="#" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px">SOURCE LINK — PASTE HERE ↗</a>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section id="crew" data-screen-label="Crew roster" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">04 / CREW ROSTER</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Who&#39;s Rolling</h2>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a;letter-spacing:1px">8 CONFIRMED · 7 CARS</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:14px">
+    <sc-for list="{{ crew }}" as="c" hint-placeholder-count="8">
+      <div style="background:#1A1A1A;border:1px solid #2c2c2c;display:flex;flex-direction:column" style-hover="border-color:#E02020">
+        <div style="display:flex;align-items:center;gap:12px;padding:16px 16px 12px">
+          <div style="width:42px;height:42px;border:2px solid #E02020;display:grid;place-items:center;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:17px;flex-shrink:0">{{c.init}}</div>
+          <div style="min-width:0">
+            <div style="font-family:'Barlow Condensed';font-weight:700;font-size:22px;letter-spacing:.5px;line-height:1">{{c.n}}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#E02020;letter-spacing:2px;margin-top:5px">{{c.role}}</div>
+          </div>
+        </div>
+        <div style="height:140px;border-top:1px solid #2c2c2c;border-bottom:1px solid #2c2c2c">
+          <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{c.slot}}" shape="rect" placeholder="{{c.ph}}" style="width:100%;height:100%;display:block" hint-size="100%,140px"></x-import>
+        </div>
+        <div style="padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7a7a7a;letter-spacing:2px;margin-bottom:4px">MACHINE</div>
+            <div style="font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:1px">{{c.car}}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;margin-top:3px">{{c.carD}}</div>
+          </div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7a7a7a;letter-spacing:2px;margin-bottom:6px">WARDROBE</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ c.fits }}" as="f" hint-placeholder-count="1">
+                <span style="background:#232323;border:1px solid #3A3A3A;color:#F5F5F5;font-size:12px;padding:4px 10px">{{f}}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section id="avail" data-screen-label="Availability" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">05 / AVAILABILITY</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Who&#39;s Free When</h2>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020;letter-spacing:1px">FULL-CREW WINDOW 08:00–20:00</span>
+  </div>
+  <div style="overflow-x:auto">
+    <div style="min-width:780px">
+      <div style="display:grid;grid-template-columns:170px repeat(16,1fr);gap:3px;margin-bottom:6px">
+        <div></div>
+        <sc-for list="{{ hourLabels }}" as="h" hint-placeholder-count="16">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7a7a7a;text-align:left">{{h.t}}</div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <sc-for list="{{ availRows }}" as="r" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:170px repeat(16,1fr);gap:3px;align-items:center">
+            <div style="padding-right:12px"><span style="font-family:'Barlow Condensed';font-weight:700;font-size:16px;letter-spacing:.5px">{{r.n}}</span> <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#7a7a7a;letter-spacing:1px">{{r.role}}</span></div>
+            <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="16">
+              <div title="{{c.tip}}" style="height:26px;background:{{c.bg}};box-shadow:{{c.sh}}"></div>
+            </sc-for>
+          </div>
+        </sc-for>
+        <div style="display:grid;grid-template-columns:170px repeat(16,1fr);gap:3px;align-items:center;margin-top:8px;border-top:1px solid #3A3A3A;padding-top:10px">
+          <div style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:16px;letter-spacing:1px;color:#E02020">FULL CREW</div>
+          <sc-for list="{{ combined }}" as="c" hint-placeholder-count="16">
+            <div title="{{c.tip}}" style="height:26px;background:{{c.bg}}"></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center">
+    <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8"><span style="width:12px;height:12px;background:#2E2E2E;display:inline-block"></span>FREE</span>
+    <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8"><span style="width:12px;height:12px;background:repeating-linear-gradient(45deg,#141414 0 3px,#1d1d1d 3px 6px);box-shadow:inset 0 0 0 1px #E02020;display:inline-block"></span>CONFLICT</span>
+    <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8"><span style="width:12px;height:12px;background:#E02020;display:inline-block"></span>ALL 8 FREE</span>
+    <span style="flex:1"></span>
+    <sc-for list="{{ conflicts }}" as="k" hint-placeholder-count="2">
+      <span style="display:inline-flex;align-items:center;gap:9px;border:1px solid #E02020;padding:7px 12px;font-size:12px;color:#F5F5F5"><span style="background:#E02020;color:#0F0F0F;font-family:'Barlow Condensed';font-weight:800;width:16px;height:16px;display:grid;place-items:center;font-size:12px;flex-shrink:0">!</span><b style="font-family:'Barlow Condensed';letter-spacing:1px">{{k.who}}</b> {{k.note}}</span>
+    </sc-for>
+  </div>
+</section>
+
+<section id="checklist" data-screen-label="Location checklist" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">06 / LOCATION CHECKLIST</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Boots on Ground</h2>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a;letter-spacing:1px">TAP A NAME TO CONFIRM</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+    <sc-for list="{{ checkCards }}" as="l" hint-placeholder-count="5">
+      <div style="background:#1A1A1A;border:1px solid #2c2c2c;padding:18px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020">{{l.idx}}</span>
+          <span style="font-family:'Barlow Condensed';font-weight:700;font-size:21px;letter-spacing:1px">{{l.name}}</span>
+          <span style="flex:1"></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f">{{l.time}}</span>
+        </div>
+        <div style="height:4px;background:#2a2a2a;margin:12px 0 6px"><div style="height:100%;background:#E02020;width:{{l.pct}}"></div></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7a7a7a;letter-spacing:1.5px;margin-bottom:12px">{{l.cnt}} CONFIRMED</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <sc-for list="{{ l.rows }}" as="p" hint-placeholder-count="5">
+            <div onClick="{{p.toggle}}" style="display:flex;align-items:center;gap:11px;cursor:pointer;opacity:{{p.dim}};min-height:26px" style-hover="opacity:1">
+              <span style="width:18px;height:18px;border:1.5px solid {{p.boxBord}};background:{{p.boxBg}};display:grid;place-items:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">{{p.mark}}</span>
+              <span style="font-size:14px;font-weight:600">{{p.n}}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#7a7a7a;letter-spacing:1.5px">{{p.role}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section id="chat" data-screen-label="Group chat" style="max-width:1240px;margin:0 auto;padding:76px 20px 40px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">07 / GROUP CHAT</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Comms</h2>
+  </div>
+  <div style="max-width:780px;border:1px solid #3A3A3A;background:#141414">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #2c2c2c">
+      <span style="width:9px;height:9px;background:#E02020;border-radius:50%;animation:blip 1.8s ease-in-out infinite"></span>
+      <span style="font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:1.5px">#MIDNIGHT-RUN</span>
+      <span style="flex:1"></span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f;letter-spacing:1px">8 ONLINE</span>
+    </div>
+    <div id="chatlog" style="height:430px;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px">
+      <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="6">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:34px;height:34px;background:{{m.avBg}};color:{{m.avCol}};border:1px solid {{m.avBord}};display:grid;place-items:center;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:13px;flex-shrink:0">{{m.i}}</div>
+          <div style="min-width:0">
+            <div style="display:flex;gap:10px;align-items:baseline"><span style="font-family:'Barlow Condensed';font-weight:700;font-size:16px;letter-spacing:.5px;color:{{m.nCol}}">{{m.n}}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6a6a6a">{{m.t}}</span></div>
+            <div style="font-size:14px;color:#E8E8E8;line-height:1.5;margin-top:3px;text-wrap:pretty">{{m.m}}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:10px;padding:14px 18px;border-top:1px solid #2c2c2c">
+      <input value="{{draft}}" onChange="{{onDraft}}" onKeyDown="{{onKey}}" placeholder="Message the crew…" style="flex:1;background:#1A1A1A;border:1px solid #3A3A3A;color:#F5F5F5;font-family:Barlow,sans-serif;font-size:14px;padding:11px 14px;outline:none;min-width:0">
+      <button onClick="{{send}}" style="background:#E02020;color:#fff;border:none;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:16px;letter-spacing:2px;padding:0 26px;cursor:pointer" style-hover="background:#c41a1a">SEND</button>
+    </div>
+  </div>
+</section>
+
+<footer style="border-top:1px solid #3A3A3A;margin-top:40px">
+  <div style="max-width:1240px;margin:0 auto;padding:34px 20px;display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+    <span style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:18px;letter-spacing:1.5px;border-bottom:3px solid #E02020;padding-bottom:2px">OASIS GARAGE</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7a7a7a;letter-spacing:1px">BUILD IT. OWN IT. DRIVE IT.</span>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5a5a5a;letter-spacing:1px">CONCEPT MOCKUP · PLACEHOLDER DATA · V0.1</span>
+  </div>
+</footer>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;simulatedTime&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Auto&quot;,&quot;06:45&quot;,&quot;09:30&quot;,&quot;13:00&quot;,&quot;16:00&quot;,&quot;19:30&quot;,&quot;21:30&quot;],&quot;default&quot;:&quot;Auto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Shoot-day demo&quot;,&quot;description&quot;:&quot;Preview the live itinerary + map state at a given time of day&quot;},&quot;routeMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Shoot-day demo&quot;,&quot;description&quot;:&quot;Animate the route line and travel dot on the map&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    // ═════════ PLACEHOLDER SHOOT DATA — EDIT EVERYTHING BELOW ═════════
+    // s/e = minutes since midnight (shoot window). x/y = map pin coords. up = label above pin.
+    this.STOPS=[
+      {name:'THE GARAGE HQ',addr:'Unit 7, Apex Industrial Park',arrive:'06:30',win:'07:00–08:00',s:390,e:480,what:'Load-in · wipe-downs · crew brief · convoy rollout',x:120,y:400,up:true},
+      {name:'ROUTE 9 OVERPASS',addr:'Mile 14, State Route 9',arrive:'09:00',win:'09:15–11:00',s:540,e:660,what:'Rolling shots · car-to-car · drone passes',x:330,y:215,up:true},
+      {name:'HARBOR DOCKS',addr:'Pier 4, Eastside Marina',arrive:'12:30',win:'12:45–14:30',s:750,e:870,what:'Static lineup · Looks 1–2 · detail macros',x:560,y:370,up:false},
+      {name:'NEON ALLEY',addr:'Old Market District',arrive:'15:30',win:'15:45–17:30',s:930,e:1050,what:'Look 3 · night-grade plates · BTS video',x:720,y:150,up:true},
+      {name:'SUMMIT LOOKOUT',addr:'Crestline Rd, Vista Point',arrive:'18:30',win:'19:00–21:00',s:1110,e:1260,what:'Sunset heroes · group shot · wrap',x:875,y:305,up:false}
+    ];
+    // Default area type per stop — the picker in the map section changes these live.
+    // Options: industrial | highway | harbor | city | mountain | farmland | parking | desert
+    this.DEF_TYPES=['industrial','highway','harbor','city','mountain'];
+    this.LEGS=[
+      'M120,400 C200,320 260,255 330,215',
+      'M330,215 C420,165 500,310 560,370',
+      'M560,370 C620,430 660,215 720,150',
+      'M720,150 C780,90 840,205 875,305'
+    ];
+    this.CREW=[
+      {n:'Marcus Vale',init:'MV',role:'LEAD PHOTO',car:'2019 NISSAN GT-R',carD:'Gun Metallic · carbon lip · rig mounts',fits:['Crew tee · L','Black cargo · 34'],free:[[6,22]],slot:'car-marcus'},
+      {n:'Theo Okafor',init:'TO',role:'VIDEO',car:'2021 AUDI RS3',carD:'Nardo Grey · chase car',fits:['Crew tee · XL'],free:[[6,22]],slot:'car-theo'},
+      {n:'Dana Reyes',init:'DR',role:'MODEL',car:'CREW VAN · PASSENGER',carD:'Riding with production',fits:['Look 1 — racer jacket set · S','Look 2 — denim two-piece · S','Look 3 — slip dress, Race Red · S'],free:[[6,22]],slot:'car-dana'},
+      {n:'Lena Kowalski',init:'LK',role:'MODEL',car:'2020 BMW M2 COMP',carD:'Alpine White · gold wheels',fits:['Look 1 — moto leather set · M','Look 2 — oversize crew hoodie · M'],free:[[6,22]],slot:'car-lena'},
+      {n:'Jax Morrow',init:'JM',role:'WHEELMAN',car:'1994 TOYOTA SUPRA MK4',carD:'Widebody · 700 hp · hero car',fits:['Race suit · M','Crew tee · M'],free:[[6,22]],slot:'car-jax'},
+      {n:'Priya Nair',init:'PN',role:'STYLIST',car:'2016 MAZDA MX-5',carD:'Soul Red · wardrobe racks (yes, really)',fits:['Crew tee · M'],free:[[8,22]],slot:'car-priya'},
+      {n:'Rico Santos',init:'RS',role:'DRONE OP',car:'CREW VAN',carD:'Kit hauler · drone cases · slider',fits:['Crew tee · L'],free:[[6,20]],slot:'car-rico'},
+      {n:'Ava Chen',init:'AC',role:'PRODUCER',car:'2018 VW GOLF R',carD:'Lapiz Blue · production hauler',fits:['Crew tee · S'],free:[[6,22]],slot:'car-ava'}
+    ];
+    this.MOOD=[
+      {t:'VIDEO',title:'ROLLING SHOT — LOW 50MM',d:'Car-to-car at 40 mph, lens skimming asphalt. This energy for Route 9.',h:200,slot:'mood-1'},
+      {t:'PHOTO',title:'DOCKSIDE LINEUP',d:'Three-quarter front, staggered spacing, hard noon shadows.',h:255,slot:'mood-2'},
+      {t:'EDIT',title:'NIGHT GRADE — CRUSHED BLACKS',d:'Blacks crushed, reds glowing, zero teal. Neon Alley reference.',h:180,slot:'mood-3'},
+      {t:'VIDEO',title:'WHIP-PAN TRANSITIONS',d:'Location-to-location whips for the recap edit.',h:215,slot:'mood-4'},
+      {t:'PHOTO',title:'DETAIL MACRO SET',d:'Badges, brake dust, exhaust tips. Shallow depth.',h:235,slot:'mood-5'},
+      {t:'EDIT',title:'SPEED-RAMP SEQUENCE',d:'120 fps → 24 fps on the overpass pass-bys.',h:195,slot:'mood-6'},
+      {t:'PHOTO',title:'GOLDEN HOUR HEROES',d:'Backlit silhouettes at Summit. Low angle, wide.',h:275,slot:'mood-7'},
+      {t:'VIDEO',title:'BTS HANDYCAM',d:'Grainy 4:3 handycam for socials. Chaos welcome.',h:190,slot:'mood-8'},
+      {t:'EDIT',title:'POSTER FRAME',d:'One frame per car for the drop poster. Centered, symmetric.',h:225,slot:'mood-9'}
+    ];
+    this.STOPCREW=[[0,1,2,3,4,5,6,7],[0,1,4,6,7],[0,1,2,3,4,5,6,7],[0,2,3,5,7],[0,1,2,3,4,5,6,7]];
+    this.CONFLICTS=[
+      {who:'PRIYA NAIR',note:'arrives 08:30 — misses HQ load-in (Stop 1)'},
+      {who:'RICO SANTOS',note:'hard out 20:00 — leaves before Summit wrap (Stop 5)'}
+    ];
+    // ═════════ END PLACEHOLDER DATA ═════════
+    const checks={};
+    this.STOPCREW.forEach((a,si)=>a.forEach(ci=>{checks[si+'-'+ci]=true}));
+    checks['0-5']=false;checks['4-6']=false;checks['2-3']=false;
+    this.state={active:'hero',sel:-1,filter:'ALL',checks,draft:'',types:this.DEF_TYPES.slice(),
+      msgs:[
+        {n:'Ava Chen',i:'AC',t:'20:02',m:'Call sheet is live. Read it twice. Call time 06:30 — coffee is on me.'},
+        {n:'Jax Morrow',i:'JM',t:'20:05',m:'Supra aligned, tank full. She is ready to eat.'},
+        {n:'Marcus Vale',i:'MV',t:'20:11',m:'Golden hour at HQ is the money window. Do NOT be late.'},
+        {n:'Priya Nair',i:'PN',t:'20:18',m:'Heads up — I land 08:30. Steaming looks 1–3 tonight, racks go in the van.'},
+        {n:'Theo Okafor',i:'TO',t:'20:24',m:'FX3 + gimbal charged. Rico, overpass drone corridor still clear?'},
+        {n:'Rico Santos',i:'RS',t:'20:31',m:'Cleared it today. Two batteries per pass, wind looks calm. Hard out at 20:00 though.'},
+        {n:'Lena Kowalski',i:'LK',t:'20:47',m:'M2 washed. Nails painted Race Red. Obviously. See you at HQ.'}
+      ]};
+  }
+  nowMin(){
+    const t=this.props.simulatedTime??'Auto';
+    if(t!=='Auto'){const[a,b]=t.split(':');return +a*60+ +b}
+    const d=new Date();return d.getHours()*60+d.getMinutes();
+  }
+  componentDidMount(){
+    this._sc=()=>{
+      const ids=['hero','itinerary','map','mood','crew','avail','checklist','chat'];
+      let cur='hero';
+      for(const id of ids){const el=document.getElementById(id);if(el&&el.getBoundingClientRect().top<=96)cur=id}
+      if(cur!==this.state.active)this.setState({active:cur});
+    };
+    window.addEventListener('scroll',this._sc,{passive:true});
+    this._tick=setInterval(()=>this.forceUpdate(),60000);
+    window.__oasisMapBridge={onPick:i=>this.setState(s=>({sel:s.sel===i?-1:i}))};
+  }
+  componentWillUnmount(){window.removeEventListener('scroll',this._sc);clearInterval(this._tick);delete window.__oasisMapBridge}
+  componentDidUpdate(pp,ps){
+    if(ps&&ps.msgs&&this.state.msgs.length!==ps.msgs.length){
+      const el=document.getElementById('chatlog');if(el)el.scrollTop=el.scrollHeight;
+    }
+  }
+  go(id){const el=document.getElementById(id);if(!el)return;window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-64,behavior:'smooth'})}
+  renderVals(){
+    const now=this.nowMin(),S=this.STOPS,sel=this.state.sel,f=this.state.filter;
+    const raw=S.map(p=>now>=p.e?'wrapped':now>=p.s?'live':'future');
+    const ni=raw.indexOf('future');
+    const kind=raw.map((k,i)=>k==='future'?(i===ni?'next':'later'):k);
+    const BADGE={wrapped:['WRAPPED ✓','#1A1A1A','#8f8f8f','#3A3A3A'],live:['● ON SET','#E02020','#FFFFFF','#E02020'],next:['UP NEXT','transparent','#E02020','#E02020'],later:['LATER','transparent','#C8C8C8','#3A3A3A']};
+    const stops=S.map((p,i)=>{
+      const k=kind[i],b=BADGE[k],isSel=sel===i;
+      return {...p,idx:'0'+(i+1),k,bTxt:b[0],bBg:b[1],bCol:b[2],bBord:b[3],
+        anim:k==='live'?'blip 1.6s ease-in-out infinite':'none',
+        cardBord:isSel?'#E02020':(k==='live'?'#7a1414':'#2c2c2c'),
+        cardBg:k==='wrapped'?'#141414':'#1A1A1A',
+        dim:k==='wrapped'?0.55:1,
+        pick:()=>this.setState({sel:isSel?-1:i})};
+    });
+    let prog=0,leg=0;
+    if(now>=S[4].e){prog=100;leg=3}
+    else if(now>S[0].s){
+      for(let i=0;i<5;i++){
+        if(now>=S[i].s&&(i===4||now<S[i+1].s)){
+          if(now<=S[i].e){prog=i*25;leg=Math.min(i,3)}
+          else{const fr=(now-S[i].e)/(S[i+1].s-S[i].e);prog=i*25+fr*25;leg=i}
+          break;
+        }
+      }
+    }
+
+    const chips=['ALL','VIDEO','EDIT','PHOTO'].map(c=>({label:c,
+      bg:f===c?'#E02020':'transparent',col:f===c?'#fff':'#C8C8C8',bord:f===c?'#E02020':'#3A3A3A',
+      pick:()=>this.setState({filter:c})}));
+    const TB={VIDEO:['#E02020','#fff','#E02020'],EDIT:['transparent','#E02020','#E02020'],PHOTO:['transparent','#C8C8C8','#3A3A3A']};
+    const moodCards=this.MOOD.filter(m=>f==='ALL'||m.t===f).map(m=>({...m,ph:m.t+' REF — drop image',tBg:TB[m.t][0],tCol:TB[m.t][1],tBord:TB[m.t][2]}));
+    const crew=this.CREW.map(c=>({...c,ph:c.car+' — drop photo'}));
+    const HRS=Array.from({length:16},(_,i)=>6+i);
+    const isFree=(c,h)=>c.free.some(r=>h>=r[0]&&h<r[1]);
+    const availRows=this.CREW.map(c=>({n:c.n,role:c.role,
+      cells:HRS.map(h=>{const fr=isFree(c,h);const cf=!fr&&h>=6&&h<21;
+        return {bg:fr?'#2E2E2E':'repeating-linear-gradient(45deg,#141414 0 4px,#1d1d1d 4px 8px)',
+          sh:cf?'inset 0 0 0 1px #E02020':'none',
+          tip:c.n+' · '+('0'+h).slice(-2)+':00 — '+(fr?'free':'unavailable')};})}));
+    const combined=HRS.map(h=>{const all=this.CREW.every(c=>isFree(c,h));
+      return {bg:all?'#E02020':'#1A1A1A',tip:('0'+h).slice(-2)+':00 — '+(all?'all 8 free':'not everyone free')};});
+    const hourLabels=HRS.map(h=>({t:h%2===0?('0'+h).slice(-2):''}));
+    const checkCards=this.STOPCREW.map((arr,si)=>{
+      const cnt=arr.filter(ci=>this.state.checks[si+'-'+ci]).length;
+      return {idx:'0'+(si+1),name:S[si].name,time:S[si].arrive,
+        cnt:cnt+' / '+arr.length,pct:Math.round(cnt/arr.length*100)+'%',
+        rows:arr.map(ci=>{const c=this.CREW[ci],ck=!!this.state.checks[si+'-'+ci],key=si+'-'+ci;
+          return {n:c.n,role:c.role,boxBg:ck?'#E02020':'transparent',boxBord:ck?'#E02020':'#4a4a4a',
+            mark:ck?'✓':'',dim:ck?1:0.55,
+            toggle:()=>this.setState(s=>({checks:{...s.checks,[key]:!s.checks[key]}}))};})};
+    });
+    const msgs=this.state.msgs.map(m=>({...m,
+      avBg:m.me?'#E02020':'#232323',avCol:m.me?'#fff':'#C8C8C8',avBord:m.me?'#E02020':'#3A3A3A',
+      nCol:m.me?'#E02020':'#F5F5F5'}));
+    const send=()=>{const d=this.state.draft.trim();if(!d)return;
+      const t=new Date(),pad=x=>('0'+x).slice(-2);
+      this.setState(s=>({msgs:[...s.msgs,{n:'You',i:'YOU',t:pad(t.getHours())+':'+pad(t.getMinutes()),m:d,me:true}],draft:''}));};
+    const selStop=sel>=0?S[sel]:null;
+    const sim=(this.props.simulatedTime??'Auto')!=='Auto';
+    const pad=x=>('0'+x).slice(-2);
+    const routeMotion=this.props.routeMotion??true;
+    return {
+      navItems:[['itinerary','ITINERARY'],['map','MAP'],['mood','MOODBOARD'],['crew','CREW'],['avail','AVAILABILITY'],['checklist','CHECKLIST'],['chat','CHAT']].map(([id,label])=>({label,
+        color:this.state.active===id?'#F5F5F5':'#909090',
+        line:this.state.active===id?'#E02020':'transparent',
+        go:()=>this.go(id)})),
+      goHero:()=>this.go('hero'),
+      clockLabel:(sim?'SIM CLOCK ':'LIVE CLOCK ')+pad(Math.floor(now/60))+':'+pad(now%60),
+      stops,
+      stopsJson:JSON.stringify(S.map((p,i)=>({n:p.name,t:p.arrive,x:p.x,y:p.y,k:kind[i],ty:this.state.types[i]}))),
+      selStr:String(sel),progStr:String(Math.round(prog*10)/10),legStr:String(leg),
+      motionStr:routeMotion?'1':'0',
+      hasSel:sel>=0,noSel:sel<0,
+      selType:sel>=0?this.state.types[sel]:'',
+      onType:e=>{const v=e.target.value;this.setState(s=>{const t=[...s.types];t[sel]=v;return{types:t}})},
+      typeOpts:[['industrial','INDUSTRIAL / GARAGE'],['highway','HIGHWAY / OVERPASS'],['harbor','HARBOR / DOCKS'],['city','CITY / DOWNTOWN'],['mountain','MOUNTAIN / LOOKOUT'],['farmland','FARMLAND'],['parking','PARKING GARAGE'],['desert','DESERT']].map(([v,label])=>({v,label})),
+      selIdx:selStop?'0'+(sel+1):'',selTime:selStop?selStop.arrive:'',selName:selStop?selStop.name:'',selWhat:selStop?selStop.what:'',
+      selCrew:selStop?this.STOPCREW[sel].length:'',
+      moodChips:chips,moodCards,crew,
+      hourLabels,availRows,combined,conflicts:this.CONFLICTS,
+      checkCards,msgs,
+      draft:this.state.draft,
+      onDraft:e=>this.setState({draft:e.target.value}),
+      onKey:e=>{if(e.key==='Enter')send()},
+      send
+    };
+  }
+}
+</script>
+</body>
+</html>
