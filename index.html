@@ -65,7 +65,7 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
 <sc-if value="{{showLoading}}" hint-placeholder-val="{{false}}">
   <div class="oa-ov" style="align-items:center">
     <div style="text-align:center">
-      <div style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:34px;letter-spacing:2px;border-bottom:3px solid #E02020;display:inline-block;padding-bottom:4px">OASIS GARAGE</div>
+      <span style="display:inline-block;border-bottom:3px solid #E02020;padding-bottom:4px"><img src="https://cdn.shopify.com/s/files/1/0597/7777/7736/files/OASIS_GARAGE_MERCH_15.png?v=1783052929" alt="OASIS GARAGE" style="height:34px;display:block;mix-blend-mode:screen"></span>
       <div style="margin-top:22px"><span class="oa-spin"></span></div>
     </div>
   </div>
@@ -76,7 +76,7 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
   <div class="oa-ov">
     <div class="oa-card">
       <div style="text-align:center;margin-bottom:8px">
-        <span style="display:inline-block;border-bottom:3px solid #E02020;padding-bottom:3px"><img src="img/oasis-garage-logo.png" alt="OASIS GARAGE" style="height:30px;display:block"></span>
+        <span style="display:inline-block;border-bottom:3px solid #E02020;padding-bottom:3px"><img src="https://cdn.shopify.com/s/files/1/0597/7777/7736/files/OASIS_GARAGE_MERCH_15.png?v=1783052929" alt="OASIS GARAGE" style="height:34px;display:block;mix-blend-mode:screen"></span>
       </div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E02020;letter-spacing:2px;text-align:center;margin-bottom:26px">CREW ACCESS · SHOOT PLANNER</div>
       <div style="display:flex;gap:0;margin-bottom:24px;border:1px solid #3A3A3A">
@@ -132,6 +132,11 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
           <input class="oa-in" value="{{pf.car_year}}" onChange="{{onPf.car_year}}" placeholder="Year">
         </div>
         <input class="oa-in" value="{{pf.car_details}}" onChange="{{onPf.car_details}}" placeholder="Details — colour, mods, notes" style="margin-top:12px">
+        <label class="oa-lbl" style="margin-top:14px;display:block">CAR PHOTO (optional)</label>
+        <div style="display:flex;gap:12px;align-items:center">
+          <input type="file" accept="image/*" onChange="{{onPfCar}}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;flex:1">
+          <sc-if value="{{pf.car_photo_preview}}" hint-placeholder-val="{{false}}"><img src="{{pf.car_photo_preview}}" style="width:76px;height:48px;object-fit:cover;border:1px solid #3A3A3A;flex-shrink:0" alt="car"></sc-if>
+        </div>
       </div>
 
       <div style="margin-top:20px;border-top:1px solid #2c2c2c;padding-top:20px">
@@ -171,7 +176,7 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
 <nav style="position:sticky;top:0;z-index:50;background:rgba(15,15,15,.94);backdrop-filter:blur(10px);border-bottom:1px solid #3A3A3A">
   <div style="max-width:1240px;margin:0 auto;display:flex;align-items:stretch;gap:20px;padding:0 20px;height:60px">
     <button onClick="{{goHero}}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:0">
-      <span style="display:inline-flex;border-bottom:3px solid #E02020;padding-bottom:2px"><img src="img/oasis-garage-logo.png" alt="OASIS GARAGE" style="height:24px;display:block"></span>
+      <span style="display:inline-flex;border-bottom:3px solid #E02020;padding-bottom:2px"><img src="https://cdn.shopify.com/s/files/1/0597/7777/7736/files/OASIS_GARAGE_MERCH_15.png?v=1783052929" alt="OASIS GARAGE" style="height:26px;display:block;mix-blend-mode:screen"></span>
     </button>
     <div style="flex:1"></div>
     <div style="display:flex;gap:2px;overflow-x:auto;scrollbar-width:none">
@@ -530,12 +535,27 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
       </div>
     </sc-for>
   </div>
+
+  <!-- CLEAR / DANGER ZONE (admin only) -->
+  <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020;letter-spacing:2px;margin:38px 0 6px">DANGER ZONE · CLEAR A SECTION</div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7a7a7a;margin-bottom:14px">Admin only. Wipes an entire section at once — this can’t be undone.</div>
+  <sc-if value="{{clearMsg}}" hint-placeholder-val="{{false}}"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#C8C8C8;margin-bottom:12px">{{clearMsg}}</div></sc-if>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+    <sc-for list="{{ clearItems }}" as="c" hint-placeholder-count="6">
+      <div style="background:#1A1A1A;border:1px solid #3A3A3A;padding:14px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:.5px">{{c.label}}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8f8f8f;line-height:1.55;flex:1">{{c.desc}}</div>
+        <sc-if value="{{c.notArmed}}" hint-placeholder-val="{{true}}"><button onClick="{{c.arm}}" class="oa-btn2" style="border-color:#E02020;color:#E02020">CLEAR ALL</button></sc-if>
+        <sc-if value="{{c.armed}}" hint-placeholder-val="{{false}}"><div style="display:flex;gap:8px"><button onClick="{{c.confirm}}" class="oa-btn" style="flex:1;padding:10px">CONFIRM</button><button onClick="{{c.cancel}}" class="oa-btn2">CANCEL</button></div></sc-if>
+      </div>
+    </sc-for>
+  </div>
 </section>
 </sc-if>
 
 <footer style="border-top:1px solid #3A3A3A;margin-top:40px">
   <div style="max-width:1240px;margin:0 auto;padding:34px 20px;display:flex;flex-wrap:wrap;gap:16px;align-items:center">
-    <span style="display:inline-flex;border-bottom:3px solid #E02020;padding-bottom:2px"><img src="img/oasis-garage-logo.png" alt="OASIS GARAGE" style="height:18px;display:block"></span>
+    <span style="display:inline-flex;border-bottom:3px solid #E02020;padding-bottom:2px"><img src="https://cdn.shopify.com/s/files/1/0597/7777/7736/files/OASIS_GARAGE_MERCH_15.png?v=1783052929" alt="OASIS GARAGE" style="height:20px;display:block;mix-blend-mode:screen"></span>
     <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7a7a7a;letter-spacing:1px">BUILD IT. OWN IT. DRIVE IT.</span>
     <span style="flex:1"></span>
     <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5a5a5a;letter-spacing:1px">MEMBER-DRIVEN · SUPABASE · V1.0</span>
@@ -562,14 +582,16 @@ class Component extends DCLogic {
       active:'hero', sel:-1, filter:'ALL', draft:'',
       authReady:false, session:null, profile:null,
       authMode:'signin', authEmail:'', authPass:'', authMsg:'', authBusy:false,
-      pf:{real_name:'',display_name:'',shirt_size:'M',pants_size:'32',car_make:'',car_model:'',car_year:'',car_details:'',location:'',avatar_icon:'helmet',role:'CREW'},
+      pf:{real_name:'',display_name:'',shirt_size:'M',pants_size:'32',car_make:'',car_model:'',car_year:'',car_details:'',location:'',avatar_icon:'helmet',role:'CREW',car_photo_preview:''},
       pfMsg:'', pfBusy:false,
       stops:[], profiles:[], availability:[], vision:[], signups:[], msgs:[], images:{},
       dataReady:false,
       showVisionForm:false, vf:{type:'PHOTO',title:'',description:'',source_link:'',image_url:''}, vfMsg:'',
       af:{start_hour:8,end_hour:20}, availMsg:'',
-      stopBuf:null, stopMsg:'', photoMsg:'', rsvpBusy:false
+      stopBuf:null, stopMsg:'', photoMsg:'', rsvpBusy:false,
+      clearArm:null, clearMsg:''
     };
+    this._pfCarFile=null;
   }
 
   /* ───── lifecycle ───── */
@@ -683,18 +705,33 @@ class Component extends DCLogic {
   async signOut(){try{await this.sb.auth.signOut()}catch(e){}}
 
   /* ───── profile setup ───── */
+  onPfCar(e){const f=e.target.files&&e.target.files[0];this._pfCarFile=f||null;
+    if(f){try{const url=URL.createObjectURL(f);this.setState(s=>({pf:{...s.pf,car_photo_preview:url}}))}catch(err){}}}
+  async uploadCarPhoto(){
+    if(!this._pfCarFile)return null;
+    const cfg=window.OASIS_CFG||{};const bucket=cfg.bucket||'shoot-photos';
+    const ext=(this._pfCarFile.name.split('.').pop()||'jpg').toLowerCase();
+    const path='member-car-'+this._uid+'-'+Date.now()+'.'+ext;
+    try{const up=await this.sb.storage.from(bucket).upload(path,this._pfCarFile,{upsert:true,cacheControl:'3600'});
+      if(up.error){console.error(up.error);return null}
+      return this.sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+    }catch(e){console.error(e);return null}}
   async submitProfile(){
     const pf=this.state.pf;
     if(!pf.display_name.trim()){this.setState({pfMsg:'A display name is required.'});return}
     this.setState({pfBusy:true,pfMsg:''});
+    let carUrl=null;
+    if(this._pfCarFile){this.setState({pfBusy:true,pfMsg:'Uploading car photo…'});carUrl=await this.uploadCarPhoto();}
     const row={id:this._uid,real_name:pf.real_name.trim()||null,display_name:pf.display_name.trim(),
       shirt_size:pf.shirt_size||null,pants_size:pf.pants_size||null,car_make:pf.car_make.trim()||null,
       car_model:pf.car_model.trim()||null,car_year:pf.car_year?parseInt(pf.car_year,10):null,
       car_details:pf.car_details.trim()||null,location:pf.location.trim()||null,
       avatar_icon:pf.avatar_icon,role:pf.role||'CREW'};
+    if(carUrl)row.car_photo_url=carUrl;
     let res;try{res=await this.sb.from('profiles').upsert(row)}catch(e){this.setState({pfBusy:false,pfMsg:String(e&&e.message||e)});return}
-    this.setState({pfBusy:false});
+    this.setState({pfBusy:false,pfMsg:''});
     if(res.error){this.setState({pfMsg:res.error.message});return}
+    this._pfCarFile=null;
     await this.loadProfile();await this.loadAll();
   }
 
@@ -708,6 +745,25 @@ class Component extends DCLogic {
   async rsvpNo(){if(this.state.rsvpBusy)return;this.setState({rsvpBusy:true});
     try{await this.sb.from('profiles').update({attending:false}).eq('id',this._uid)}catch(e){}
     this.setState({rsvpBusy:false});await this.loadProfile()}
+
+  /* ───── admin: clear-all (danger zone) ───── */
+  armClear(key){this.setState({clearArm:key,clearMsg:''})}
+  cancelClear(){this.setState({clearArm:null})}
+  async doClear(key){
+    if(!this.isAdmin())return;
+    const sb=this.sb;this.setState({clearArm:null,clearMsg:'Clearing…'});
+    let res;
+    try{
+      if(key==='vision')res=await sb.from('vision_cards').delete().not('id','is',null);
+      else if(key==='stops')res=await sb.from('stops').delete().not('id','is',null);
+      else if(key==='availability')res=await sb.from('availability').delete().not('id','is',null);
+      else if(key==='signups')res=await sb.from('location_signups').delete().not('id','is',null);
+      else if(key==='photos')res=await sb.from('images').delete().not('slot_id','is',null);
+      else if(key==='crew')res=await sb.from('profiles').update({in_crew:false}).not('id','is',null);
+    }catch(e){this.setState({clearMsg:'Error: '+String(e&&e.message||e)});return}
+    if(res&&res.error){this.setState({clearMsg:'Error: '+res.error.message});return}
+    this.setState({clearMsg:'Cleared ✓'});
+    await this.loadAll();if(key==='crew')await this.loadProfile()}
 
   /* ───── availability ───── */
   async addAvail(){const {af}=this.state;const s=parseInt(af.start_hour,10),e=parseInt(af.end_hour,10);
@@ -809,8 +865,8 @@ class Component extends DCLogic {
     const crew=crewList.map(p=>{const car=this.carStr(p);const fits=[];if(p.shirt_size)fits.push('SHIRT · '+p.shirt_size);if(p.pants_size)fits.push('PANTS · '+p.pants_size);
       const isMe=p.id===uid;
       return {n:p.display_name||'—',role:p.role||'CREW',car:car||'—',carD:p.car_details||'',
-        loc:p.location||'—',fits:fits.length?fits:['—'],slot:'car-'+p.id,src:img['car-'+p.id]||'',
-        ph:(car||'CAR')+' — admin adds photo',avatar:this.icon(p.avatar_icon||'helmet','#E02020'),
+        loc:p.location||'—',fits:fits.length?fits:['—'],slot:'car-'+p.id,src:img['car-'+p.id]||p.car_photo_url||'',
+        ph:(car||'CAR')+' — no photo yet',avatar:this.icon(p.avatar_icon||'helmet','#E02020'),
         bord:isMe?'#E02020':'#2c2c2c'}});
     const myProfile=profile;
     const inCrew=!!(myProfile&&myProfile.in_crew);
@@ -872,6 +928,18 @@ class Component extends DCLogic {
     crewList.forEach(p=>pushSlot('car-'+p.id,(p.display_name||'Crew')+' · CAR'));
     visSorted.forEach(m=>pushSlot('vision-'+m.id,'VISION · '+m.title));
 
+    // ---- admin: clear-all (danger zone) ----
+    const CLEARABLE=[
+      {key:'crew',label:'Crew roster',desc:'Removes everyone from the roster (keeps their profiles).'},
+      {key:'availability',label:'All availability',desc:'Deletes every member’s time windows.'},
+      {key:'vision',label:'All vision cards',desc:'Deletes every card on the vision board.'},
+      {key:'signups',label:'Location sign-ups',desc:'Clears who’s confirmed at each stop.'},
+      {key:'stops',label:'Stops & map pins',desc:'Deletes every itinerary stop and map pin.'},
+      {key:'photos',label:'All photos',desc:'Clears every uploaded image slot.'}
+    ];
+    const clearItems=CLEARABLE.map(c=>({label:c.label,desc:c.desc,armed:st.clearArm===c.key,notArmed:st.clearArm!==c.key,
+      arm:()=>this.armClear(c.key),confirm:()=>this.doClear(c.key),cancel:()=>this.cancelClear()}));
+
     // ---- form field setters ----
     const mk=(objKey,fields)=>{const o={};fields.forEach(k=>o[k]=e=>this.setObj(objKey,k,e));return o};
 
@@ -890,6 +958,7 @@ class Component extends DCLogic {
       // profile setup
       pf:st.pf,pfMsg:st.pfMsg,pfBusy:st.pfBusy,pfCta:st.pfBusy?'…':'ENTER THE GARAGE',
       onPf:mk('pf',['real_name','display_name','shirt_size','pants_size','car_make','car_model','car_year','car_details','location','role']),
+      onPfCar:e=>this.onPfCar(e),
       roleOpts:['LEAD PHOTO','PHOTO','VIDEO','DRONE OP','MODEL','STYLIST','WHEELMAN','PRODUCER','EDITOR','CREW'].map(v=>({v,label:v})),
       shirtOpts:['XS','S','M','L','XL','XXL'].map(v=>({v,label:v})),
       pantsOpts:['28','30','32','34','36','38','40','S/M/L'].map(v=>({v,label:v})),
@@ -937,6 +1006,7 @@ class Component extends DCLogic {
       onSb:mk('stopBuf',['name','addr','what','arrive','win','s','e','x','y','area_type']),
       saveStop:()=>this.saveStop(),cancelStop:()=>this.cancelStop(),deleteStop:()=>this.deleteStop(),stopMsg:st.stopMsg,
       photoSlots,photoMsg:st.photoMsg,
+      clearItems,clearMsg:st.clearMsg,
       // shared
       heroSrc:img['hero-car']||''
     };
