@@ -38,6 +38,71 @@
     }
     _w(s) { return new this.T.Vector3((s.x - 500) / 55, 0, (s.y - 280) / 42); }
     _rng(seed) { let s = seed + 1.7; return () => { s = Math.sin(s * 127.1) * 43758.5; return s - Math.floor(s); }; }
+    // Auto-layout: spread up to ~20 stops on a clean serpentine grid so islands
+    // never overlap and the road snakes through them in order. Coordinates from
+    // the DB are ignored — position is derived purely from route order + count.
+    _layout(n) {
+      const T = this.T, out = [];
+      const SP = 4.3; // spacing between adjacent stops
+      const cols = Math.max(1, Math.min(6, Math.round(Math.sqrt(Math.max(1, n) * 1.7))));
+      const rows = Math.ceil(n / cols);
+      for (let i = 0; i < n; i++) {
+        const r = Math.floor(i / cols), cInRow = i - r * cols;
+        const col = (r % 2 === 0) ? cInRow : (cols - 1 - cInRow);
+        const x = (col - (cols - 1) / 2) * SP;
+        const z = (r - (rows - 1) / 2) * SP;
+        out.push(new T.Vector3(x, 0, z));
+      }
+      return { positions: out, spacing: SP, cols, rows,
+        width: (cols - 1) * SP, depth: (rows - 1) * SP };
+    }
+
+    // Resize the ground/grid and frame the camera so the whole serpentine grid
+    // fits nicely, no matter how many stops there are (1..20).
+    _fitScene(lay) {
+      const THREE = this.T;
+      // Islands extend ~2.7 * baseScale beyond a stop; pad the ground for that.
+      const pad = 4.2;
+      const gw = lay.width + pad * 2;   // ground width  (x)
+      const gd = lay.depth + pad * 2;   // ground depth  (z)
+
+      if (this._base) {
+        this._base.scale.set(gw, 1, gd);
+      }
+      if (this._grid) {
+        // GridHelper base size is 1 unit → scale to the larger span so lines cover it.
+        const gs = Math.max(gw, gd);
+        this._grid.scale.set(gs, 1, gs);
+      }
+
+      // Fit distance: half-extent / tan(fov/2), padded, using the larger span.
+      const cam = this._camera, ctr = this._controls;
+      if (cam && ctr) {
+        const half = Math.max(gw, gd) / 2;
+        const vFov = cam.fov * Math.PI / 180;
+        const hFov = 2 * Math.atan(Math.tan(vFov / 2) * cam.aspect);
+        const distV = half / Math.tan(vFov / 2);
+        const distH = half / Math.tan(hFov / 2);
+        const dist = Math.max(distV, distH) * 1.12 + 4;
+
+        ctr.target.set(0, 0, 0);
+        // Keep the same cinematic tilt/heading; just push back proportionally.
+        const dir = new THREE.Vector3(0.28, 0.62, 0.98).normalize();
+        cam.position.copy(dir.multiplyScalar(dist));
+        cam.near = 0.1; cam.far = dist * 4 + 60; cam.updateProjectionMatrix();
+
+        ctr.minDistance = Math.max(4, dist * 0.5);
+        ctr.maxDistance = dist * 1.9;
+        ctr.update();
+      }
+
+      // Fog scales with the scene so distant edges fade but the grid stays visible.
+      if (this._scene && this._scene.fog) {
+        const span = Math.max(gw, gd);
+        this._scene.fog.near = span * 0.9 + 8;
+        this._scene.fog.far = span * 1.9 + 22;
+      }
+    }
 
     async _boot() {
       const THREE = this.T = await import('three');
@@ -90,10 +155,10 @@
         white: new MS({ color: 0xf5f5f5, emissive: 0xf5f5f5, emissiveIntensity: 0.6 })
       };
 
-      const base = new THREE.Mesh(new THREE.BoxGeometry(30, 0.3, 20), this._mat.base);
+      const base = this._base = new THREE.Mesh(new THREE.BoxGeometry(1, 0.3, 1), this._mat.base);
       base.position.y = -0.16; scene.add(base);
-      const grid = new THREE.GridHelper(20, 20, 0x232328, 0x1b1b20);
-      grid.scale.x = 30 / 20; grid.position.y = 0.004; scene.add(grid);
+      const grid = this._grid = new THREE.GridHelper(1, 20, 0x232328, 0x1b1b20);
+      grid.position.y = 0.004; scene.add(grid);
 
       this._route = new THREE.Group(); scene.add(this._route);
       this._pinsG = new THREE.Group(); scene.add(this._pinsG);
@@ -514,33 +579,54 @@
       this._pickables = []; this._pins = []; this._pulses = []; this._bobs = []; this._islands = [];
       this._progStrip = null; this._car = null;
 
-      const pts = stops.map(s => this._w(s).setY(0.05));
-      const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.55);
-      const samples = this._samples = curve.getPoints(400);
-      this._uStops = stops.map((s, i) => {
-        const p = pts[i]; let best = 0, bd = 1e9;
-        for (let k = 0; k <= 400; k++) { const d = samples[k].distanceToSquared(p); if (d < bd) { bd = d; best = k; } }
-        return best / 400;
-      });
-      this._uStops[0] = 0; this._uStops[stops.length - 1] = 1;
+      // Positions are derived from route order + count via the serpentine grid,
+      // NOT from the DB x/y, so N stops never collide and always fit the frame.
+      const n = stops.length;
+      const lay = this._layout(n);
+      const flat = this._layout_flat = lay.positions;              // ground-plane Vector3s (y=0)
+      this._fitScene(lay);
+
+      // Road curve through the ordered stops. CatmullRom needs >=2 points; for a
+      // single stop we skip the road entirely and drop the car on that island.
+      let samples;
+      if (n >= 2) {
+        const pts = flat.map(p => p.clone().setY(0.05));
+        const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
+        samples = this._samples = curve.getPoints(Math.max(200, n * 60));
+        const seg = samples.length - 1;
+        this._uStops = flat.map((p0, i) => {
+          const p = pts[i]; let best = 0, bd = 1e9;
+          for (let k = 0; k <= seg; k++) { const d = samples[k].distanceToSquared(p); if (d < bd) { bd = d; best = k; } }
+          return best / seg;
+        });
+        this._uStops[0] = 0; this._uStops[n - 1] = 1;
+      } else {
+        const c = (flat[0] || new THREE.Vector3()).clone().setY(0.055);
+        samples = this._samples = [c.clone(), c.clone()];
+        this._uStops = [0];
+      }
 
       stops.forEach((s, i) => {
-        const isl = this._island(i, s, this._w(s));
-        let md = 1e9;
-        for (let j = 0; j < stops.length; j++) if (j !== i) md = Math.min(md, pts[i].distanceTo(pts[j]));
-        isl.userData.baseS = Math.max(0.55, Math.min(1, md / 5.8));
-        isl.scale.setScalar(isl.userData.baseS);
+        const isl = this._island(i, s, flat[i]);
+        // Islands sit one grid-cell apart, so a fixed base scale keeps them from
+        // touching regardless of count (spacing shrinks the disc radius room).
+        const bs = Math.max(0.6, Math.min(1, lay.spacing / 5.0));
+        isl.userData.baseS = bs;
+        isl.scale.setScalar(bs);
         this._islands.push(isl);
       });
 
-      const road = new THREE.Mesh(this._strip(samples, 0.5, 0.05),
-        new THREE.MeshBasicMaterial({ map: this._roadTex(), side: THREE.DoubleSide }));
-      this._route.add(road);
+      if (n >= 2) {
+        const road = new THREE.Mesh(this._strip(samples, 0.5, 0.05),
+          new THREE.MeshBasicMaterial({ map: this._roadTex(), side: THREE.DoubleSide }));
+        this._route.add(road);
+      }
 
       this._car = this._buildCar(); this._route.add(this._car);
+      if (n < 2) this._car.position.copy((flat[0] || new THREE.Vector3()).clone().setY(0.055));
 
       stops.forEach((s, i) => {
-        const pos = this._w(s);
+        const pos = flat[i];
         const grp = new THREE.Group(); grp.position.copy(pos); grp.userData.idx = i;
         const post = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.5, 8), this._mat.grey);
         post.position.y = 0.85; grp.add(post);
@@ -566,7 +652,7 @@
     _applyState() {
       const a = this._attrsCache = this._attrs();
       if (!a.stops.length) return;
-      const json = JSON.stringify(a.stops.map(s => [s.n, s.t, s.x, s.y, s.ty]));
+      const json = JSON.stringify(a.stops.map(s => [s.n, s.t, s.ty]));
       if (json !== this._lastJson) { this._lastJson = json; this._buildStops(a.stops); this._lastProg = -1; }
 
       if (a.sel !== this._selPrev) { this._selPrev = a.sel; this._driveU = 0; }

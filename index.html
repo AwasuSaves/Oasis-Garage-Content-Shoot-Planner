@@ -499,6 +499,7 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
     </sc-for>
   </div>
   <button onClick="{{addStop}}" class="oa-btn" style="width:auto">+ ADD STOP</button>
+  <sc-if value="{{capMsg}}" hint-placeholder-val="{{false}}"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#FF6a6a;margin-top:10px">{{capMsg}}</div></sc-if>
 
   <sc-if value="{{editingStop}}" hint-placeholder-val="{{false}}">
     <div style="background:#141414;border:1px solid #E02020;padding:18px;margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">
@@ -510,9 +511,8 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
       <div><label class="oa-lbl">SHOOT WINDOW</label><input class="oa-in" value="{{sb.win}}" onChange="{{onSb.win}}" placeholder="07:00–08:00"></div>
       <div><label class="oa-lbl">START (min)</label><input class="oa-in" value="{{sb.s}}" onChange="{{onSb.s}}" placeholder="390"></div>
       <div><label class="oa-lbl">END (min)</label><input class="oa-in" value="{{sb.e}}" onChange="{{onSb.e}}" placeholder="480"></div>
-      <div><label class="oa-lbl">MAP X</label><input class="oa-in" value="{{sb.x}}" onChange="{{onSb.x}}"></div>
-      <div><label class="oa-lbl">MAP Y</label><input class="oa-in" value="{{sb.y}}" onChange="{{onSb.y}}"></div>
       <div><label class="oa-lbl">AREA TYPE</label><select class="oa-in" value="{{sb.area_type}}" onChange="{{onSb.area_type}}"><sc-for list="{{typeOpts}}" as="o" hint-placeholder-count="8"><option value="{{o.v}}">{{o.label}}</option></sc-for></select></div>
+      <div style="grid-column:1/-1;font-family:'JetBrains Mono',monospace;font-size:10px;color:#6a6a6a;letter-spacing:1px">MAP POSITION IS AUTO-ARRANGED IN ROUTE ORDER — STOPS SPACE THEMSELVES AND THE ROAD CONNECTS THEM. UP TO 20 STOPS.</div>
       <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="oa-btn" style="width:auto" onClick="{{saveStop}}">SAVE</button>
         <button class="oa-btn2" onClick="{{cancelStop}}">CANCEL</button>
@@ -799,7 +799,9 @@ class Component extends DCLogic {
     try{await this.sb.from('stops').update({area_type:v}).eq('id',st.id)}catch(err){}this.reload('stops')}
 
   /* ───── admin: stop editor ───── */
-  addStop(){const n=this.state.stops.length;this.setState({stopBuf:{id:null,sort_order:n,name:'NEW STOP',addr:'',what:'',arrive:'12:00',win:'12:00–13:00',s:720,e:780,x:400,y:300,up:true,area_type:'city'},stopMsg:''})}
+  addStop(){const n=this.state.stops.length;
+    if(n>=20){this.setState({stopBuf:null,stopMsg:'You’ve hit the max of 20 stops. Delete one before adding another.'});return}
+    this.setState({stopBuf:{id:null,sort_order:n,name:'NEW STOP',addr:'',what:'',arrive:'12:00',win:'12:00–13:00',s:720,e:780,x:400,y:300,up:true,area_type:'city'},stopMsg:''})}
   editStop(st){this.setState({stopBuf:{...st},stopMsg:''})}
   cancelStop(){this.setState({stopBuf:null,stopMsg:''})}
   async saveStop(){const b=this.state.stopBuf;if(!b)return;
@@ -981,7 +983,7 @@ class Component extends DCLogic {
       clockLabel:(sim?'SIM CLOCK ':'LIVE CLOCK ')+this.fmt12(Math.floor(now/60),now%60),
       stops,noStops:S.length===0,
       // map
-      stopsJson:JSON.stringify(S.map((p,i)=>({n:p.name,t:p.arrive,x:p.x,y:p.y,k:kind[i],ty:p.area_type}))),
+      stopsJson:JSON.stringify(S.map((p,i)=>({n:p.name,t:p.arrive,k:kind[i],ty:p.area_type}))),
       selStr:String(sel),progStr:String(Math.round(prog*10)/10),legStr:String(leg),motionStr:(this.props.routeMotion===false?'0':'1'),
       hasSel:sel>=0,noSel:sel<0,selType:selStop?selStop.area_type:'',selTypeLabel:selStop?(TYPE_LABELS[selStop.area_type]||selStop.area_type):'',
       onType:e=>this.onType(e),typeOpts:Object.keys(TYPE_LABELS).map(v=>({v,label:TYPE_LABELS[v]})),
@@ -1013,6 +1015,7 @@ class Component extends DCLogic {
       adminStops,addStop:()=>this.addStop(),editingStop:!!st.stopBuf,sb:st.stopBuf||{},
       onSb:mk('stopBuf',['name','addr','what','arrive','win','s','e','x','y','area_type']),
       saveStop:()=>this.saveStop(),cancelStop:()=>this.cancelStop(),deleteStop:()=>this.deleteStop(),stopMsg:st.stopMsg,
+      capMsg:(!st.stopBuf&&st.stopMsg)?st.stopMsg:false,
       photoSlots,photoMsg:st.photoMsg,
       clearItems,clearMsg:st.clearMsg,
       // shared
