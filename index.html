@@ -658,6 +658,8 @@ class Component extends DCLogic {
 
   /* ───── helpers ───── */
   initialsOf(name){const p=(name||'').trim().split(/\s+/).filter(Boolean);if(!p.length)return '??';if(p.length===1)return p[0].slice(0,2).toUpperCase();return (p[0][0]+p[1][0]).toUpperCase()}
+  fmt12(h,m){m=m||0;const ap=(h%24)<12?'AM':'PM';let hh=h%12;if(hh===0)hh=12;return hh+':'+('0'+m).slice(-2)+' '+ap}
+  h12(h){const ap=(h%24)<12?'a':'p';let hh=h%12;if(hh===0)hh=12;return hh+ap}
   icon(name,color){const inner=this.ICONS[name]||this.ICONS.helmet;const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="'+(color||'#F5F5F5')+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';return 'data:image/svg+xml,'+encodeURIComponent(svg)}
   carStr(p){return [p.car_year,p.car_make,p.car_model].filter(Boolean).join(' ').toUpperCase().trim()}
   nowMin(){const t=this.props.simulatedTime||'Auto';if(t!=='Auto'){const[a,b]=t.split(':');return +a*60+ +b}const d=new Date();return d.getHours()*60+d.getMinutes()}
@@ -820,11 +822,11 @@ class Component extends DCLogic {
     const freeAt=(u,h)=>(availByUser[u]||[]).some(w=>h>=w.start_hour&&h<w.end_hour);
     const availRows=availMembers.map(p=>({n:p.display_name||'—',role:p.role||'',
       cells:HRS.map(h=>{const fr=freeAt(p.id,h);return {bg:fr?'#2E2E2E':'repeating-linear-gradient(45deg,#141414 0 4px,#1d1d1d 4px 8px)',
-        sh:'none',tip:(p.display_name||'')+' · '+pad(h)+':00 — '+(fr?'free':'unavailable')}})}));
+        sh:'none',tip:(p.display_name||'')+' · '+this.fmt12(h,0)+' — '+(fr?'free':'unavailable')}})}));
     const combined=HRS.map(h=>{const all=availMembers.length>0&&availMembers.every(p=>freeAt(p.id,h));
-      return {bg:all?'#E02020':'#1A1A1A',tip:pad(h)+':00 — '+(all?'all free':'not everyone free')}});
-    const hourLabels=HRS.map(h=>({t:h%2===0?pad(h):''}));
-    const myWins=(availByUser[uid]||[]).slice().sort((a,b)=>a.start_hour-b.start_hour).map(w=>({label:pad(w.start_hour)+':00–'+pad(w.end_hour)+':00',remove:()=>this.removeAvail(w.id)}));
+      return {bg:all?'#E02020':'#1A1A1A',tip:this.fmt12(h,0)+' — '+(all?'all free':'not everyone free')}});
+    const hourLabels=HRS.map(h=>({t:h%2===0?this.h12(h):''}));
+    const myWins=(availByUser[uid]||[]).slice().sort((a,b)=>a.start_hour-b.start_hour).map(w=>({label:this.fmt12(w.start_hour,0)+' – '+this.fmt12(w.end_hour,0),remove:()=>this.removeAvail(w.id)}));
 
     // ---- vision ----
     const f=st.filter;
@@ -899,7 +901,7 @@ class Component extends DCLogic {
       // hero stats
       statCrew:pad(crew.length),statStops:pad(S.length),statLooks:pad(st.vision.length),statCars:pad(crewList.filter(p=>this.carStr(p)).length),
       // itinerary
-      clockLabel:(sim?'SIM CLOCK ':'LIVE CLOCK ')+pad(Math.floor(now/60))+':'+pad(now%60),
+      clockLabel:(sim?'SIM CLOCK ':'LIVE CLOCK ')+this.fmt12(Math.floor(now/60),now%60),
       stops,noStops:S.length===0,
       // map
       stopsJson:JSON.stringify(S.map((p,i)=>({n:p.name,t:p.arrive,x:p.x,y:p.y,k:kind[i],ty:p.area_type}))),
@@ -920,7 +922,7 @@ class Component extends DCLogic {
       crewBtnLabel:inCrew?'✓ ON THE ROSTER — LEAVE CREW':'JOIN CREW',crewBtnBord:inCrew?'#E02020':'#3A3A3A',crewBtnCol:inCrew?'#E02020':'#F5F5F5',
       toggleCrew:()=>this.toggleCrew(),
       // availability
-      hourOpts:Array.from({length:25},(_,i)=>({v:String(i),label:pad(i)+':00'})),
+      hourOpts:Array.from({length:25},(_,i)=>({v:String(i),label:this.fmt12(i,0)})),
       af:st.af,onAf:mk('af',['start_hour','end_hour']),addAvail:()=>this.addAvail(),availMsg:st.availMsg,
       myWindows:myWins,noMyWindows:myWins.length===0,
       hourLabels,availRows,combined,hasAvail:availMembers.length>0,noAvail:availMembers.length===0,
