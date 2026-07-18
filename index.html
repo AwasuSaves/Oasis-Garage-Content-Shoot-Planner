@@ -197,7 +197,7 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
     <div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px;margin-bottom:14px">OG DROP 01 · OFFICIAL CALL SHEET</div>
       <h1 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(60px,9vw,116px);line-height:.9;letter-spacing:-1px;margin:0 0 18px;text-transform:uppercase">OG Drop01<br>Shoot<span style="color:#E02020">.</span></h1>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#C8C8C8;letter-spacing:1px;margin-bottom:22px">SAT · JUL 18 2026 &nbsp;—&nbsp; CALL TIME 06:30</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#C8C8C8;letter-spacing:1px;margin-bottom:22px">{{heroDateLine}}</div>
       <div style="display:inline-block;background:#E02020;color:#000000;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:20px;letter-spacing:2px;padding:8px 18px 8px 14px;margin-bottom:34px">BUILD IT. OWN IT. DRIVE IT.</div>
       <div style="display:flex;flex-wrap:wrap">
         <div style="border-left:1px solid #3A3A3A;padding:2px 26px 2px 16px"><div style="font-family:'Barlow Condensed';font-weight:800;font-size:40px;line-height:1">{{statCrew}}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1.5px">CREW</div></div>
@@ -485,6 +485,15 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
     <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Control Room</h2>
   </div>
 
+  <!-- SHOOT DATE -->
+  <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020;letter-spacing:2px;margin-bottom:10px">SHOOT DATE</div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f;line-height:1.55;margin-bottom:12px">The calendar day the shoot starts. Stops whose times run past midnight are counted as the <b style="color:#F5F5F5">same shoot</b> into the next day — they won't flip to WRAPPED while the shoot is still going.</div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:34px">
+    <input type="date" class="oa-in" style="width:auto" value="{{shootDateBuf}}" onChange="{{onShootDate}}">
+    <button onClick="{{saveShootDate}}" class="oa-btn" style="width:auto">SAVE DATE</button>
+    <sc-if value="{{shootMsg}}" hint-placeholder-val="{{false}}"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#C8C8C8">{{shootMsg}}</span></sc-if>
+  </div>
+
   <!-- STOP / MAP EDITOR -->
   <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020;letter-spacing:2px;margin-bottom:14px">STOPS &amp; MAP PINS</div>
   <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
@@ -586,6 +595,7 @@ class Component extends DCLogic {
       pf:{real_name:'',display_name:'',shirt_size:'M',pants_size:'32',car_make:'',car_model:'',car_year:'',car_details:'',location:'',avatar_icon:'helmet',role:'CREW',car_photo_preview:''},
       pfMsg:'', pfBusy:false,
       stops:[], profiles:[], availability:[], vision:[], signups:[], msgs:[], images:{},
+      settings:{}, shootDateBuf:'', shootMsg:'',
       dataReady:false,
       showVisionForm:false, vf:{type:'PHOTO',title:'',description:'',source_link:'',image_url:''}, vfMsg:'',
       af:{start_hour:8,end_hour:20}, availMsg:'',
@@ -644,13 +654,14 @@ class Component extends DCLogic {
   async loadAll(){
     const sb=this.sb;
     const q=(t,order)=>{let r=sb.from(t).select('*');if(order)r=r.order(order);return r.then(x=>x,()=>({data:[]}))};
-    const [stops,profiles,avail,vision,signups,msgs,images]=await Promise.all([
+    const [stops,profiles,avail,vision,signups,msgs,images,settings]=await Promise.all([
       q('stops','sort_order'),q('profiles'),q('availability'),q('vision_cards','sort_order'),
-      q('location_signups'),q('messages','created_at'),q('images')
+      q('location_signups'),q('messages','created_at'),q('images'),q('settings')
     ]);
     const imgMap={};(images.data||[]).forEach(r=>imgMap[r.slot_id]=r.url);
+    const setRow=(settings.data&&settings.data[0])||{};
     this.setState({stops:stops.data||[],profiles:profiles.data||[],availability:avail.data||[],
-      vision:vision.data||[],signups:signups.data||[],msgs:msgs.data||[],images:imgMap,dataReady:true});
+      vision:vision.data||[],signups:signups.data||[],msgs:msgs.data||[],images:imgMap,settings:setRow,dataReady:true});
   }
   subscribe(){
     this.teardown();
@@ -663,6 +674,7 @@ class Component extends DCLogic {
       .on('postgres_changes',on('location_signups'),()=>this.reload('signups'))
       .on('postgres_changes',on('stops'),()=>this.reload('stops'))
       .on('postgres_changes',on('images'),()=>this.reload('images'))
+      .on('postgres_changes',on('settings'),()=>this.reload('settings'))
       .subscribe();
   }
   teardown(){if(this._ch){try{this.sb.removeChannel(this._ch)}catch(e){}this._ch=null}}
@@ -670,11 +682,13 @@ class Component extends DCLogic {
     const sb=this.sb;
     const map={messages:['messages','created_at','msgs'],profiles:['profiles',null,'profiles'],
       availability:['availability',null,'availability'],vision:['vision_cards','sort_order','vision'],
-      signups:['location_signups',null,'signups'],stops:['stops','sort_order','stops'],images:['images',null,'images']};
+      signups:['location_signups',null,'signups'],stops:['stops','sort_order','stops'],images:['images',null,'images'],
+      settings:['settings',null,'settings']};
     const [tbl,order,key]=map[which];
     let r=sb.from(tbl).select('*');if(order)r=r.order(order);
     let data=[];try{const res=await r;data=res.data||[]}catch(e){return}
     if(which==='images'){const m={};data.forEach(x=>m[x.slot_id]=x.url);this.setState({images:m});return}
+    if(which==='settings'){this.setState({settings:data[0]||{}});return}
     this.setState({[key]:data});
     if(which==='profiles')this.loadProfile();
   }
@@ -690,7 +704,14 @@ class Component extends DCLogic {
   // Derive shoot start/end minutes from the human-readable ARRIVE + SHOOT WINDOW,
   // so the itinerary status (WRAPPED / ON SET / UP NEXT) always matches what the
   // admin actually typed — no more stale numeric fields marking a stop "wrapped".
-  winRange(win,arrive){const nums=(''+(win||'')).match(/\d{1,2}:\d{2}/g)||[];let s=nums[0]!=null?this.parseHM(nums[0]):null,e=nums[1]!=null?this.parseHM(nums[1]):null;const a=this.parseHM(arrive);if(s==null)s=a;if(s==null)s=0;if(e==null)e=s+60;if(e<=s)e=s+60;return[s,e]}
+  winRange(win,arrive){const nums=(''+(win||'')).match(/\d{1,2}:\d{2}/g)||[];let s=nums[0]!=null?this.parseHM(nums[0]):null,e=nums[1]!=null?this.parseHM(nums[1]):null;const a=this.parseHM(arrive);if(s==null)s=a;if(s==null)s=0;if(e==null)e=s+60;else if(e<=s)e+=1440;/* window runs past midnight */return[s,e]}
+  // Local midnight of the shoot's start date (from the admin-set setting, else today).
+  shootBase(){const sd=this.state.settings&&this.state.settings.shoot_date;let n=new Date();if(sd&&/^\d{4}-\d{2}-\d{2}/.test(''+sd)){const p=(''+sd).slice(0,10).split('-').map(Number);return new Date(p[0],p[1]-1,p[2],0,0,0,0)}return new Date(n.getFullYear(),n.getMonth(),n.getDate(),0,0,0,0)}
+  // Absolute start/end Date for each stop, rolling the calendar day forward every
+  // time the clock goes backwards in the running order — so a 1 AM stop after a
+  // 11 PM stop is correctly the NEXT day and never reads as "wrapped" mid-shoot.
+  stopTimes(S){const base=this.shootBase().getTime();let day=0,prev=-1;return S.map(p=>{const r=this.winRange(p.win,p.arrive);let s=r[0],e=r[1];if(s<prev)day++;prev=s;const off=day*1440;return{start:base+(off+s)*60000,end:base+(off+e)*60000}})}
+  shootDateLabel(){const sd=this.state.settings&&this.state.settings.shoot_date;let d;if(sd&&/^\d{4}-\d{2}-\d{2}/.test(''+sd)){const p=(''+sd).slice(0,10).split('-').map(Number);d=new Date(p[0],p[1]-1,p[2])}else return '';try{return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}).toUpperCase()}catch(e){return ''}}
   clockText(){const d=new Date();const h=d.getHours(),m=d.getMinutes(),s=d.getSeconds();const ap=h<12?'AM':'PM';let hh=h%12;if(hh===0)hh=12;let tz='';try{tz=new Intl.DateTimeFormat('en-US',{timeZoneName:'short'}).formatToParts(d).find(p=>p.type==='timeZoneName').value||''}catch(e){}return hh+':'+('0'+m).slice(-2)+':'+('0'+s).slice(-2)+' '+ap+(tz?' '+tz:'')}
   isAdmin(){return !!(this.state.profile&&this.state.profile.is_admin)}
   set(k,v){this.setState({[k]:v})}
@@ -820,6 +841,14 @@ class Component extends DCLogic {
   async deleteStop(){const b=this.state.stopBuf;if(!b){return}if(!b.id){this.setState({stopBuf:null});return}
     try{await this.sb.from('stops').delete().eq('id',b.id)}catch(e){}this.setState({stopBuf:null});this.reload('stops')}
 
+  /* ───── admin: shoot date ───── */
+  async saveShootDate(){const d=(this.state.shootDateBuf||'').trim();
+    if(d&&!/^\d{4}-\d{2}-\d{2}$/.test(d)){this.setState({shootMsg:'Use the date picker or YYYY-MM-DD.'});return}
+    this.setState({shootMsg:'Saving…'});
+    let res;try{res=await this.sb.from('settings').upsert({id:1,shoot_date:d||null})}catch(e){this.setState({shootMsg:String(e&&e.message||e)});return}
+    if(res.error){this.setState({shootMsg:res.error.message});return}
+    this.setState({shootMsg:'Shoot date saved ✓'});this.reload('settings')}
+
   /* ───── admin: photos ───── */
   async uploadPhoto(slotId,file){if(!file)return;
     this.setState({photoMsg:'Uploading '+slotId+'…'});
@@ -848,14 +877,17 @@ class Component extends DCLogic {
     const showRsvp=showApp&&profile&&(profile.attending===null||profile.attending===undefined);
     const pad=x=>('0'+x).slice(-2);
     const now=this.nowMin();
+    const sim=(this.props.simulatedTime||'Auto')!=='Auto';
 
     // ---- itinerary / map ----
-    // Compute each stop's shoot start/end minutes from the ARRIVE + SHOOT WINDOW
-    // shown on the card (falling back to any stored s/e only if no time text
-    // exists). This keeps status honest even for stops saved before this fix.
-    const seOf=p=>{const hasT=/\d{1,2}:\d{2}/.test(''+(p.win||''))||/\d{1,2}:\d{2}/.test(''+(p.arrive||''));if(hasT)return this.winRange(p.win,p.arrive);return[p.s!=null?p.s:0,p.e!=null?p.e:(p.s!=null?p.s+60:1440)]};
-    const SE=S.map(seOf);
-    const raw=S.map((p,i)=>{const se=SE[i];return now>=se[1]?'wrapped':now>=se[0]?'live':'future'});
+    // Each stop gets an ABSOLUTE start/end datetime anchored to the shoot's date,
+    // rolling to the next calendar day whenever the clock wraps past midnight.
+    // Status is then a plain now-vs-datetime check, so a shoot running into the
+    // early hours keeps its late stops "up next"/"on set" instead of "wrapped".
+    const base=this.shootBase().getTime();
+    const T=this.stopTimes(S);
+    const nowMs=sim?(base+now*60000):Date.now();
+    const raw=S.map((p,i)=>{const t=T[i];return nowMs>=t.end?'wrapped':nowMs>=t.start?'live':'future'});
     const ni=raw.indexOf('future');
     const kind=raw.map((k,i)=>k==='future'?(i===ni?'next':'later'):k);
     const BADGE={wrapped:['WRAPPED ✓','#1A1A1A','#8f8f8f','#3A3A3A'],live:['● ON SET','#E02020','#FFFFFF','#E02020'],next:['UP NEXT','transparent','#E02020','#E02020'],later:['LATER','transparent','#C8C8C8','#3A3A3A']};
@@ -868,13 +900,12 @@ class Component extends DCLogic {
     // progress along route
     let prog=0,leg=0;
     if(S.length){const last=S.length-1;const seg=100/Math.max(1,last);
-      if(now>=SE[last][1]){prog=100;leg=Math.max(0,last-1)}
-      else if(now>SE[0][0]){for(let i=0;i<S.length;i++){if(now>=SE[i][0]&&(i===last||now<SE[i+1][0])){
-        if(now<=SE[i][1]){prog=i*seg;leg=Math.min(i,Math.max(0,last-1))}
-        else{const denom=(SE[i+1][0])-SE[i][1]||1;const fr=(now-SE[i][1])/denom;prog=i*seg+fr*seg;leg=Math.min(i,Math.max(0,last-1))}break}}}}
+      if(nowMs>=T[last].end){prog=100;leg=Math.max(0,last-1)}
+      else if(nowMs>T[0].start){for(let i=0;i<S.length;i++){if(nowMs>=T[i].start&&(i===last||nowMs<T[i+1].start)){
+        if(nowMs<=T[i].end){prog=i*seg;leg=Math.min(i,Math.max(0,last-1))}
+        else{const denom=(T[i+1].start)-T[i].end||1;const fr=(nowMs-T[i].end)/denom;prog=i*seg+fr*seg;leg=Math.min(i,Math.max(0,last-1))}break}}}}
     const TYPE_LABELS={industrial:'INDUSTRIAL / GARAGE',highway:'HIGHWAY / OVERPASS',harbor:'HARBOR / DOCKS',city:'CITY / DOWNTOWN',mountain:'MOUNTAIN / LOOKOUT',farmland:'FARMLAND',parking:'PARKING GARAGE',desert:'DESERT'};
     const selStop=sel>=0?S[sel]:null;
-    const sim=(this.props.simulatedTime||'Auto')!=='Auto';
 
     // ---- profiles / crew ----
     const byId={};st.profiles.forEach(p=>byId[p.id]=p);
@@ -1028,10 +1059,13 @@ class Component extends DCLogic {
       onSb:mk('stopBuf',['name','addr','what','arrive','win','s','e','x','y','area_type']),
       saveStop:()=>this.saveStop(),cancelStop:()=>this.cancelStop(),deleteStop:()=>this.deleteStop(),stopMsg:st.stopMsg,
       capMsg:(!st.stopBuf&&st.stopMsg)?st.stopMsg:false,
+      shootDateBuf:(st.shootDateBuf&&st.shootDateBuf.length)?st.shootDateBuf:(st.settings&&st.settings.shoot_date?(''+st.settings.shoot_date).slice(0,10):''),
+      onShootDate:e=>this.set('shootDateBuf',e.target.value),saveShootDate:()=>this.saveShootDate(),shootMsg:st.shootMsg,
       photoSlots,photoMsg:st.photoMsg,
       clearItems,clearMsg:st.clearMsg,
       // shared
-      heroSrc:img['hero-car']||''
+      heroSrc:img['hero-car']||'',
+      heroDateLine:((this.shootDateLabel()||'SHOOT DATE — SET IN ADMIN')+(S.length&&S[0].arrive?('  —  CALL TIME '+S[0].arrive):''))
     };
   }
   go(id){const el=document.getElementById(id);if(!el)return;window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-64,behavior:'smooth'})}
