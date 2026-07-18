@@ -150,6 +150,22 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
   </div>
 </sc-if>
 
+<!-- ══════════════════ RSVP / ATTENDANCE POPUP (first entry) ══════════════════ -->
+<sc-if value="{{showRsvp}}" hint-placeholder-val="{{false}}">
+  <div class="oa-ov" style="align-items:center;z-index:210">
+    <div class="oa-card" style="text-align:center">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E02020;letter-spacing:2px;margin-bottom:12px">CREW CHECK-IN</div>
+      <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:38px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.5px;line-height:1">Are You Rolling<span style="color:#E02020">?</span></h2>
+      <div style="font-size:14px;color:#C8C8C8;margin-bottom:26px;line-height:1.55">Confirm you're coming to the <b style="color:#F5F5F5">OG Drop01</b> shoot. Say yes and you're on the crew roster.</div>
+      <div style="display:flex;gap:12px">
+        <button class="oa-btn" style="flex:1" onClick="{{rsvpYes}}" disabled="{{rsvpBusy}}">YES, I'M IN</button>
+        <button class="oa-btn2" style="flex:1;padding:12px" onClick="{{rsvpNo}}" disabled="{{rsvpBusy}}">CAN'T MAKE IT</button>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5a5a5a;letter-spacing:.5px;margin-top:18px">You can change this later from the crew roster.</div>
+    </div>
+  </div>
+</sc-if>
+
 <!-- ══════════════════ MAIN APP ══════════════════ -->
 <sc-if value="{{showApp}}" hint-placeholder-val="{{true}}">
 <nav style="position:sticky;top:0;z-index:50;background:rgba(15,15,15,.94);backdrop-filter:blur(10px);border-bottom:1px solid #3A3A3A">
@@ -174,8 +190,8 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
 <section id="hero" data-screen-label="Hero" style="background:linear-gradient(180deg,#141414 0%,#0F0F0F 100%);border-bottom:1px solid #3A3A3A">
   <div style="max-width:1240px;margin:0 auto;padding:64px 20px 56px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:44px;align-items:center">
     <div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px;margin-bottom:14px">SHOOT 01 · OFFICIAL CALL SHEET</div>
-      <h1 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(60px,9vw,116px);line-height:.9;letter-spacing:-1px;margin:0 0 18px;text-transform:uppercase">Midnight<br>Run<span style="color:#E02020">.</span></h1>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px;margin-bottom:14px">OG DROP 01 · OFFICIAL CALL SHEET</div>
+      <h1 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(60px,9vw,116px);line-height:.9;letter-spacing:-1px;margin:0 0 18px;text-transform:uppercase">OG Drop01<br>Shoot<span style="color:#E02020">.</span></h1>
       <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#C8C8C8;letter-spacing:1px;margin-bottom:22px">SAT · JUL 18 2026 &nbsp;—&nbsp; CALL TIME 06:30</div>
       <div style="display:inline-block;background:#E02020;color:#0F0F0F;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:20px;letter-spacing:2px;padding:8px 18px 8px 14px;margin-bottom:34px">BUILD IT. OWN IT. DRIVE IT.</div>
       <div style="display:flex;flex-wrap:wrap">
@@ -460,7 +476,7 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
   <div style="max-width:780px;border:1px solid #3A3A3A;background:#141414">
     <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #2c2c2c">
       <span style="width:9px;height:9px;background:#E02020;border-radius:50%;animation:blip 1.8s ease-in-out infinite"></span>
-      <span style="font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:1.5px">#MIDNIGHT-RUN</span>
+      <span style="font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:1.5px">#OG-DROP01</span>
       <span style="flex:1"></span>
       <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f;letter-spacing:1px">{{onlineLabel}}</span>
     </div>
@@ -581,7 +597,7 @@ class Component extends DCLogic {
       dataReady:false,
       showVisionForm:false, vf:{type:'PHOTO',title:'',description:'',source_link:'',image_url:''}, vfMsg:'',
       af:{start_hour:8,end_hour:20}, availMsg:'',
-      stopBuf:null, stopMsg:'', photoMsg:''
+      stopBuf:null, stopMsg:'', photoMsg:'', rsvpBusy:false
     };
   }
 
@@ -712,6 +728,14 @@ class Component extends DCLogic {
   /* ───── crew ───── */
   async toggleCrew(){const p=this.state.profile;if(!p)return;try{await this.sb.from('profiles').update({in_crew:!p.in_crew}).eq('id',this._uid)}catch(e){}await this.loadProfile();this.reload('profiles')}
 
+  /* ───── rsvp (first-entry attendance check-in) ───── */
+  async rsvpYes(){if(this.state.rsvpBusy)return;this.setState({rsvpBusy:true});
+    try{await this.sb.from('profiles').update({attending:true,in_crew:true}).eq('id',this._uid)}catch(e){}
+    this.setState({rsvpBusy:false});await this.loadProfile();this.reload('profiles')}
+  async rsvpNo(){if(this.state.rsvpBusy)return;this.setState({rsvpBusy:true});
+    try{await this.sb.from('profiles').update({attending:false}).eq('id',this._uid)}catch(e){}
+    this.setState({rsvpBusy:false});await this.loadProfile()}
+
   /* ───── availability ───── */
   async addAvail(){const {af}=this.state;const s=parseInt(af.start_hour,10),e=parseInt(af.end_hour,10);
     if(!(e>s)){this.setState({availMsg:'End time must be after start time.'});return}
@@ -780,6 +804,7 @@ class Component extends DCLogic {
     const showAuth=authReady&&!session;
     const showSetup=session&&!profile;
     const showApp=session&&!!profile;
+    const showRsvp=showApp&&profile&&(profile.attending===null||profile.attending===undefined);
     const pad=x=>('0'+x).slice(-2);
     const now=this.nowMin();
 
@@ -880,6 +905,7 @@ class Component extends DCLogic {
     return {
       // gates
       showLoading,showAuth,showSetup,showApp,isAdmin,notAdmin:!isAdmin,
+      showRsvp,rsvpBusy:st.rsvpBusy,rsvpYes:()=>this.rsvpYes(),rsvpNo:()=>this.rsvpNo(),
       // auth
       authMode:st.authMode,authEmail:st.authEmail,authPass:st.authPass,authMsg:st.authMsg,authBusy:st.authBusy,
       authCta:st.authBusy?'…':(st.authMode==='signup'?'CREATE ACCOUNT':'SIGN IN'),
