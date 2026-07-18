@@ -578,6 +578,7 @@ class Component extends DCLogic {
   constructor(props){
     super(props);
     this._uid=null; this._ch=null; this._loadedFor=null;
+    this.SHOOT_TZ='America/New_York'; // shoot runs on Eastern time (EST/EDT auto)
     this.ICONS={
       helmet:'<path d="M4 14a8 8 0 0 1 16 0v2H4z"/><path d="M4 14h9a3 3 0 0 0 3-3"/>',
       wheel:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v3M12 17v3M4 12h3M17 12h3"/>',
@@ -705,14 +706,20 @@ class Component extends DCLogic {
   // so the itinerary status (WRAPPED / ON SET / UP NEXT) always matches what the
   // admin actually typed — no more stale numeric fields marking a stop "wrapped".
   winRange(win,arrive){const nums=(''+(win||'')).match(/\d{1,2}:\d{2}/g)||[];let s=nums[0]!=null?this.parseHM(nums[0]):null,e=nums[1]!=null?this.parseHM(nums[1]):null;const a=this.parseHM(arrive);if(s==null)s=a;if(s==null)s=0;if(e==null)e=s+60;else if(e<=s)e+=1440;/* window runs past midnight */return[s,e]}
-  // Local midnight of the shoot's start date (from the admin-set setting, else today).
-  shootBase(){const sd=this.state.settings&&this.state.settings.shoot_date;let n=new Date();if(sd&&/^\d{4}-\d{2}-\d{2}/.test(''+sd)){const p=(''+sd).slice(0,10).split('-').map(Number);return new Date(p[0],p[1]-1,p[2],0,0,0,0)}return new Date(n.getFullYear(),n.getMonth(),n.getDate(),0,0,0,0)}
-  // Absolute start/end Date for each stop, rolling the calendar day forward every
-  // time the clock goes backwards in the running order — so a 1 AM stop after a
-  // 11 PM stop is correctly the NEXT day and never reads as "wrapped" mid-shoot.
-  stopTimes(S){const base=this.shootBase().getTime();let day=0,prev=-1;return S.map(p=>{const r=this.winRange(p.win,p.arrive);let s=r[0],e=r[1];if(s<prev)day++;prev=s;const off=day*1440;return{start:base+(off+s)*60000,end:base+(off+e)*60000}})}
-  shootDateLabel(){const sd=this.state.settings&&this.state.settings.shoot_date;let d;if(sd&&/^\d{4}-\d{2}-\d{2}/.test(''+sd)){const p=(''+sd).slice(0,10).split('-').map(Number);d=new Date(p[0],p[1]-1,p[2])}else return '';try{return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}).toUpperCase()}catch(e){return ''}}
-  clockText(){const d=new Date();const h=d.getHours(),m=d.getMinutes(),s=d.getSeconds();const ap=h<12?'AM':'PM';let hh=h%12;if(hh===0)hh=12;let tz='';try{tz=new Intl.DateTimeFormat('en-US',{timeZoneName:'short'}).formatToParts(d).find(p=>p.type==='timeZoneName').value||''}catch(e){}return hh+':'+('0'+m).slice(-2)+':'+('0'+s).slice(-2)+' '+ap+(tz?' '+tz:'')}
+  // ── Timezone: the whole shoot runs on ONE fixed clock (Eastern) so every member
+  //    sees the same schedule no matter where they open the site. EST/EDT is picked
+  //    automatically per date. Change SHOOT_TZ if the shoot's timezone ever changes.
+  tzOff(ms){const d=new Date(ms);const o={};new Intl.DateTimeFormat('en-US',{timeZone:this.SHOOT_TZ,hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(d).forEach(p=>o[p.type]=p.value);let hh=(o.hour==='24')?0:+o.hour;const asUTC=Date.UTC(+o.year,+o.month-1,+o.day,hh,+o.minute,+o.second);return (asUTC-d.getTime())/60000}
+  // Convert a wall-clock time (y,mo,d,minutes) in the shoot timezone to an absolute UTC ms.
+  zonedToUtc(y,mo,d,minutes){const h=Math.floor(minutes/60),mi=minutes%60;const guess=Date.UTC(y,mo-1,d,h,mi,0);let off=this.tzOff(guess);let utc=guess-off*60000;const off2=this.tzOff(utc);if(off2!==off)utc=guess-off2*60000;return utc}
+  // [year,month,day] of the shoot's start date (admin setting, else "today" in the shoot tz).
+  shootYMD(){const sd=this.state.settings&&this.state.settings.shoot_date;if(sd&&/^\d{4}-\d{2}-\d{2}/.test(''+sd)){const p=(''+sd).slice(0,10).split('-').map(Number);return[p[0],p[1],p[2]]}const o={};new Intl.DateTimeFormat('en-US',{timeZone:this.SHOOT_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).forEach(p=>o[p.type]=p.value);return[+o.year,+o.month,+o.day]}
+  // Absolute start/end (UTC ms) for each stop in the shoot timezone, rolling the calendar
+  // day forward whenever the clock goes backwards in the running order — so a 1 AM stop
+  // after an 11 PM stop is the NEXT day and never reads as "wrapped" mid-shoot.
+  stopTimes(S){const[y,mo,d]=this.shootYMD();let day=0,prev=-1;return S.map(p=>{const r=this.winRange(p.win,p.arrive);let s=r[0],e=r[1];if(s<prev)day++;prev=s;const eDay=day+(e>=1440?1:0),eMin=e%1440;return{start:this.zonedToUtc(y,mo,d+day,s),end:this.zonedToUtc(y,mo,d+eDay,eMin)}})}
+  shootDateLabel(){const sd=this.state.settings&&this.state.settings.shoot_date;if(!(sd&&/^\d{4}-\d{2}-\d{2}/.test(''+sd)))return '';const p=(''+sd).slice(0,10).split('-').map(Number);try{return new Date(Date.UTC(p[0],p[1]-1,p[2])).toLocaleDateString('en-US',{timeZone:'UTC',weekday:'short',month:'short',day:'numeric',year:'numeric'}).toUpperCase()}catch(e){return ''}}
+  clockText(){const d=new Date();try{return d.toLocaleTimeString('en-US',{timeZone:this.SHOOT_TZ,hour:'numeric',minute:'2-digit',second:'2-digit',timeZoneName:'short'})}catch(e){const h=d.getHours(),m=d.getMinutes(),s=d.getSeconds();const ap=h<12?'AM':'PM';let hh=h%12;if(hh===0)hh=12;return hh+':'+('0'+m).slice(-2)+':'+('0'+s).slice(-2)+' '+ap}}
   isAdmin(){return !!(this.state.profile&&this.state.profile.is_admin)}
   set(k,v){this.setState({[k]:v})}
   setObj(obj,k,e){const v=e.target.value;this.setState(s=>({[obj]:{...(s[obj]||{}),[k]:v}}))}
@@ -884,9 +891,10 @@ class Component extends DCLogic {
     // rolling to the next calendar day whenever the clock wraps past midnight.
     // Status is then a plain now-vs-datetime check, so a shoot running into the
     // early hours keeps its late stops "up next"/"on set" instead of "wrapped".
-    const base=this.shootBase().getTime();
     const T=this.stopTimes(S);
-    const nowMs=sim?(base+now*60000):Date.now();
+    let nowMs;
+    if(sim){const y=this.shootYMD();nowMs=this.zonedToUtc(y[0],y[1],y[2],now);}
+    else nowMs=Date.now();
     const raw=S.map((p,i)=>{const t=T[i];return nowMs>=t.end?'wrapped':nowMs>=t.start?'live':'future'});
     const ni=raw.indexOf('future');
     const kind=raw.map((k,i)=>k==='future'?(i===ni?'next':'later'):k);
