@@ -509,10 +509,8 @@ a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
       <div style="grid-column:1/-1"><label class="oa-lbl">SHOT DESCRIPTION</label><input class="oa-in" value="{{sb.what}}" onChange="{{onSb.what}}" placeholder="Rolling shots · car-to-car · drone passes"></div>
       <div><label class="oa-lbl">ARRIVE</label><input class="oa-in" value="{{sb.arrive}}" onChange="{{onSb.arrive}}" placeholder="06:30"></div>
       <div><label class="oa-lbl">SHOOT WINDOW</label><input class="oa-in" value="{{sb.win}}" onChange="{{onSb.win}}" placeholder="07:00–08:00"></div>
-      <div><label class="oa-lbl">START (min)</label><input class="oa-in" value="{{sb.s}}" onChange="{{onSb.s}}" placeholder="390"></div>
-      <div><label class="oa-lbl">END (min)</label><input class="oa-in" value="{{sb.e}}" onChange="{{onSb.e}}" placeholder="480"></div>
       <div><label class="oa-lbl">AREA TYPE</label><select class="oa-in" value="{{sb.area_type}}" onChange="{{onSb.area_type}}"><sc-for list="{{typeOpts}}" as="o" hint-placeholder-count="8"><option value="{{o.v}}">{{o.label}}</option></sc-for></select></div>
-      <div style="grid-column:1/-1;font-family:'JetBrains Mono',monospace;font-size:10px;color:#6a6a6a;letter-spacing:1px">MAP POSITION IS AUTO-ARRANGED IN ROUTE ORDER — STOPS SPACE THEMSELVES AND THE ROAD CONNECTS THEM. UP TO 20 STOPS.</div>
+      <div style="grid-column:1/-1;font-family:'JetBrains Mono',monospace;font-size:10px;color:#6a6a6a;letter-spacing:1px">ITINERARY STATUS (WRAPPED / ON SET / UP NEXT) IS SET AUTOMATICALLY FROM THE ARRIVE TIME + SHOOT WINDOW ABOVE. MAP POSITION IS AUTO-ARRANGED IN ROUTE ORDER — UP TO 20 STOPS.</div>
       <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="oa-btn" style="width:auto" onClick="{{saveStop}}">SAVE</button>
         <button class="oa-btn2" onClick="{{cancelStop}}">CANCEL</button>
@@ -607,7 +605,7 @@ class Component extends DCLogic {
       if(cur!==this.state.active)this.setState({active:cur});
     };
     window.addEventListener('scroll',this._sc,{passive:true});
-    this._tick=setInterval(()=>this.forceUpdate(),60000);
+    this._tick=setInterval(()=>this.forceUpdate(),1000);
     this.init();
   }
   componentWillUnmount(){
@@ -688,6 +686,12 @@ class Component extends DCLogic {
   icon(name,color){const inner=this.ICONS[name]||this.ICONS.helmet;const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="'+(color||'#F5F5F5')+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';return 'data:image/svg+xml,'+encodeURIComponent(svg)}
   carStr(p){return [p.car_year,p.car_make,p.car_model].filter(Boolean).join(' ').toUpperCase().trim()}
   nowMin(){const t=this.props.simulatedTime||'Auto';if(t!=='Auto'){const[a,b]=t.split(':');return +a*60+ +b}const d=new Date();return d.getHours()*60+d.getMinutes()}
+  parseHM(str){if(str==null)return null;const m=(''+str).match(/(\d{1,2}):(\d{2})/);if(!m)return null;const h=+m[1],mm=+m[2];if(h>23||mm>59)return null;return h*60+mm}
+  // Derive shoot start/end minutes from the human-readable ARRIVE + SHOOT WINDOW,
+  // so the itinerary status (WRAPPED / ON SET / UP NEXT) always matches what the
+  // admin actually typed — no more stale numeric fields marking a stop "wrapped".
+  winRange(win,arrive){const nums=(''+(win||'')).match(/\d{1,2}:\d{2}/g)||[];let s=nums[0]!=null?this.parseHM(nums[0]):null,e=nums[1]!=null?this.parseHM(nums[1]):null;const a=this.parseHM(arrive);if(s==null)s=a;if(s==null)s=0;if(e==null)e=s+60;if(e<=s)e=s+60;return[s,e]}
+  clockText(){const d=new Date();const h=d.getHours(),m=d.getMinutes(),s=d.getSeconds();const ap=h<12?'AM':'PM';let hh=h%12;if(hh===0)hh=12;let tz='';try{tz=new Intl.DateTimeFormat('en-US',{timeZoneName:'short'}).formatToParts(d).find(p=>p.type==='timeZoneName').value||''}catch(e){}return hh+':'+('0'+m).slice(-2)+':'+('0'+s).slice(-2)+' '+ap+(tz?' '+tz:'')}
   isAdmin(){return !!(this.state.profile&&this.state.profile.is_admin)}
   set(k,v){this.setState({[k]:v})}
   setObj(obj,k,e){const v=e.target.value;this.setState(s=>({[obj]:{...(s[obj]||{}),[k]:v}}))}
@@ -805,8 +809,11 @@ class Component extends DCLogic {
   editStop(st){this.setState({stopBuf:{...st},stopMsg:''})}
   cancelStop(){this.setState({stopBuf:null,stopMsg:''})}
   async saveStop(){const b=this.state.stopBuf;if(!b)return;
+    // Start/end minutes are derived from the ARRIVE + SHOOT WINDOW the admin typed,
+    // so the WRAPPED / ON SET / UP NEXT status always tracks the real schedule.
+    const [ss,ee]=this.winRange(b.win,b.arrive);
     const row={sort_order:parseInt(b.sort_order,10)||0,name:b.name,addr:b.addr,what:b.what||null,arrive:b.arrive,win:b.win,
-      s:parseInt(b.s,10)||0,e:parseInt(b.e,10)||0,x:parseInt(b.x,10)||0,y:parseInt(b.y,10)||0,up:true,area_type:b.area_type};
+      s:ss,e:ee,x:parseInt(b.x,10)||0,y:parseInt(b.y,10)||0,up:true,area_type:b.area_type};
     let res;try{res=b.id?await this.sb.from('stops').update(row).eq('id',b.id):await this.sb.from('stops').insert(row)}catch(e){this.setState({stopMsg:String(e)});return}
     if(res.error){this.setState({stopMsg:res.error.message});return}
     this.setState({stopBuf:null,stopMsg:''});this.reload('stops')}
@@ -843,7 +850,12 @@ class Component extends DCLogic {
     const now=this.nowMin();
 
     // ---- itinerary / map ----
-    const raw=S.map(p=>now>=p.e?'wrapped':now>=p.s?'live':'future');
+    // Compute each stop's shoot start/end minutes from the ARRIVE + SHOOT WINDOW
+    // shown on the card (falling back to any stored s/e only if no time text
+    // exists). This keeps status honest even for stops saved before this fix.
+    const seOf=p=>{const hasT=/\d{1,2}:\d{2}/.test(''+(p.win||''))||/\d{1,2}:\d{2}/.test(''+(p.arrive||''));if(hasT)return this.winRange(p.win,p.arrive);return[p.s!=null?p.s:0,p.e!=null?p.e:(p.s!=null?p.s+60:1440)]};
+    const SE=S.map(seOf);
+    const raw=S.map((p,i)=>{const se=SE[i];return now>=se[1]?'wrapped':now>=se[0]?'live':'future'});
     const ni=raw.indexOf('future');
     const kind=raw.map((k,i)=>k==='future'?(i===ni?'next':'later'):k);
     const BADGE={wrapped:['WRAPPED ✓','#1A1A1A','#8f8f8f','#3A3A3A'],live:['● ON SET','#E02020','#FFFFFF','#E02020'],next:['UP NEXT','transparent','#E02020','#E02020'],later:['LATER','transparent','#C8C8C8','#3A3A3A']};
@@ -856,10 +868,10 @@ class Component extends DCLogic {
     // progress along route
     let prog=0,leg=0;
     if(S.length){const last=S.length-1;const seg=100/Math.max(1,last);
-      if(now>=S[last].e){prog=100;leg=Math.max(0,last-1)}
-      else if(now>S[0].s){for(let i=0;i<S.length;i++){if(now>=S[i].s&&(i===last||now<S[i+1].s)){
-        if(now<=S[i].e){prog=i*seg;leg=Math.min(i,Math.max(0,last-1))}
-        else{const fr=(now-S[i].e)/((S[i+1].s)-S[i].e);prog=i*seg+fr*seg;leg=Math.min(i,Math.max(0,last-1))}break}}}}
+      if(now>=SE[last][1]){prog=100;leg=Math.max(0,last-1)}
+      else if(now>SE[0][0]){for(let i=0;i<S.length;i++){if(now>=SE[i][0]&&(i===last||now<SE[i+1][0])){
+        if(now<=SE[i][1]){prog=i*seg;leg=Math.min(i,Math.max(0,last-1))}
+        else{const denom=(SE[i+1][0])-SE[i][1]||1;const fr=(now-SE[i][1])/denom;prog=i*seg+fr*seg;leg=Math.min(i,Math.max(0,last-1))}break}}}}
     const TYPE_LABELS={industrial:'INDUSTRIAL / GARAGE',highway:'HIGHWAY / OVERPASS',harbor:'HARBOR / DOCKS',city:'CITY / DOWNTOWN',mountain:'MOUNTAIN / LOOKOUT',farmland:'FARMLAND',parking:'PARKING GARAGE',desert:'DESERT'};
     const selStop=sel>=0?S[sel]:null;
     const sim=(this.props.simulatedTime||'Auto')!=='Auto';
@@ -980,7 +992,7 @@ class Component extends DCLogic {
       // hero stats
       statCrew:pad(crew.length),statStops:pad(S.length),statLooks:pad(st.vision.length),statCars:pad(crewList.filter(p=>this.carStr(p)).length),
       // itinerary
-      clockLabel:(sim?'SIM CLOCK ':'LIVE CLOCK ')+this.fmt12(Math.floor(now/60),now%60),
+      clockLabel:sim?('SIM CLOCK '+this.fmt12(Math.floor(now/60),now%60)):('● LIVE '+this.clockText()),
       stops,noStops:S.length===0,
       // map
       stopsJson:JSON.stringify(S.map((p,i)=>({n:p.name,t:p.arrive,k:kind[i],ty:p.area_type}))),
