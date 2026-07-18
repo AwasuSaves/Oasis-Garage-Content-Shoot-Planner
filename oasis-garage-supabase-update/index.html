@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,600;1,700;1,800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<!-- ═══ SUPABASE CONFIG (publishable/anon key — safe for client) ═══ -->
+<script>
+window.OASIS_CFG = {
+  url: 'https://xxcsdejekscdkvubtvjz.supabase.co',
+  anon: 'sb_publishable_vGg9TayKT5cAqfRP89xi4g_UDaP_hJx',
+  bucket: 'shoot-photos'
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+html{scrollbar-color:#3A3A3A #0F0F0F}
+body{margin:0;background:#0F0F0F;color:#F5F5F5;font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#E02020;text-decoration:none}a:hover{color:#FF4A4A}
+::selection{background:#E02020;color:#fff}
+@keyframes dashmove{to{stroke-dashoffset:-36}}
+@keyframes pulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(2.8);opacity:0}}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.oa-ov{position:fixed;inset:0;z-index:200;background:radial-gradient(120% 90% at 50% 0%,#181818 0%,#0F0F0F 60%);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:48px 18px}
+.oa-card{width:100%;max-width:440px;background:#141414;border:1px solid #3A3A3A;padding:34px 30px 30px}
+.oa-wide{max-width:620px}
+.oa-in{width:100%;background:#1A1A1A;border:1px solid #3A3A3A;color:#F5F5F5;font-family:Barlow,sans-serif;font-size:15px;padding:11px 13px;outline:none}
+.oa-in:focus{border-color:#E02020}
+.oa-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:#8f8f8f;letter-spacing:2px;margin-bottom:6px;display:block}
+.oa-btn{background:#E02020;color:#fff;border:none;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:17px;letter-spacing:2px;padding:12px 22px;cursor:pointer;width:100%}
+.oa-btn:hover{background:#c41a1a}.oa-btn:disabled{opacity:.5;cursor:default}
+.oa-btn2{background:transparent;color:#F5F5F5;border:1px solid #3A3A3A;font-family:'Barlow Condensed';font-weight:700;font-size:14px;letter-spacing:1.5px;padding:9px 16px;cursor:pointer}
+.oa-btn2:hover{border-color:#E02020}
+.oa-spin{width:16px;height:16px;border:2px solid #3A3A3A;border-top-color:#E02020;border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+</style>
+</helmet>
+
+<!-- ══════════════════ LOADING SPLASH ══════════════════ -->
+<sc-if value="{{showLoading}}" hint-placeholder-val="{{false}}">
+  <div class="oa-ov" style="align-items:center">
+    <div style="text-align:center">
+      <div style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:34px;letter-spacing:2px;border-bottom:3px solid #E02020;display:inline-block;padding-bottom:4px">OASIS GARAGE</div>
+      <div style="margin-top:22px"><span class="oa-spin"></span></div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ══════════════════ AUTH OVERLAY ══════════════════ -->
+<sc-if value="{{showAuth}}" hint-placeholder-val="{{false}}">
+  <div class="oa-ov">
+    <div class="oa-card">
+      <div style="text-align:center;margin-bottom:8px">
+        <span style="display:inline-block;border-bottom:3px solid #E02020;padding-bottom:3px"><img src="img/oasis-garage-logo.png" alt="OASIS GARAGE" style="height:30px;display:block"></span>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E02020;letter-spacing:2px;text-align:center;margin-bottom:26px">CREW ACCESS · SHOOT PLANNER</div>
+      <div style="display:flex;gap:0;margin-bottom:24px;border:1px solid #3A3A3A">
+        <button onClick="{{setSignin}}" style="flex:1;background:{{signinBg}};color:{{signinCol}};border:none;font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:2px;padding:11px;cursor:pointer">SIGN IN</button>
+        <button onClick="{{setSignup}}" style="flex:1;background:{{signupBg}};color:{{signupCol}};border:none;font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:2px;padding:11px;cursor:pointer">SIGN UP</button>
+      </div>
+      <label class="oa-lbl">EMAIL</label>
+      <input class="oa-in" type="email" value="{{authEmail}}" onChange="{{onAuthEmail}}" onKeyDown="{{onAuthKey}}" placeholder="you@email.com" style="margin-bottom:16px">
+      <label class="oa-lbl">PASSWORD</label>
+      <input class="oa-in" type="password" value="{{authPass}}" onChange="{{onAuthPass}}" onKeyDown="{{onAuthKey}}" placeholder="••••••••" style="margin-bottom:22px">
+      <button class="oa-btn" onClick="{{submitAuth}}" disabled="{{authBusy}}">{{authCta}}</button>
+      <sc-if value="{{authMsg}}" hint-placeholder-val="{{false}}">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#FF6a6a;margin-top:16px;line-height:1.5">{{authMsg}}</div>
+      </sc-if>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5a5a5a;letter-spacing:.5px;margin-top:22px;line-height:1.6">BUILD IT. OWN IT. DRIVE IT.</div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ══════════════════ PROFILE SETUP OVERLAY ══════════════════ -->
+<sc-if value="{{showSetup}}" hint-placeholder-val="{{false}}">
+  <div class="oa-ov">
+    <div class="oa-card oa-wide">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E02020;letter-spacing:2px;margin-bottom:6px">FIRST TIME · SET UP YOUR CREW PROFILE</div>
+      <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:40px;margin:0 0 24px;text-transform:uppercase;letter-spacing:.5px">Who Are You<span style="color:#E02020">?</span></h2>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+        <div><label class="oa-lbl">REAL NAME</label><input class="oa-in" value="{{pf.real_name}}" onChange="{{onPf.real_name}}" placeholder="Jane Doe"></div>
+        <div><label class="oa-lbl">DISPLAY NAME *</label><input class="oa-in" value="{{pf.display_name}}" onChange="{{onPf.display_name}}" placeholder="Shown on your crew card"></div>
+        <div><label class="oa-lbl">CREW ROLE</label>
+          <select class="oa-in" value="{{pf.role}}" onChange="{{onPf.role}}">
+            <sc-for list="{{roleOpts}}" as="o" hint-placeholder-count="9"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+          </select>
+        </div>
+        <div><label class="oa-lbl">LOCATION</label><input class="oa-in" value="{{pf.location}}" onChange="{{onPf.location}}" placeholder="City where you live"></div>
+        <div><label class="oa-lbl">SHIRT SIZE</label>
+          <select class="oa-in" value="{{pf.shirt_size}}" onChange="{{onPf.shirt_size}}">
+            <sc-for list="{{shirtOpts}}" as="o" hint-placeholder-count="7"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+          </select>
+        </div>
+        <div><label class="oa-lbl">PANTS SIZE</label>
+          <select class="oa-in" value="{{pf.pants_size}}" onChange="{{onPf.pants_size}}">
+            <sc-for list="{{pantsOpts}}" as="o" hint-placeholder-count="8"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;border-top:1px solid #2c2c2c;padding-top:20px">
+        <label class="oa-lbl">YOUR CAR</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 90px;gap:12px">
+          <input class="oa-in" value="{{pf.car_make}}" onChange="{{onPf.car_make}}" placeholder="Make (BMW)">
+          <input class="oa-in" value="{{pf.car_model}}" onChange="{{onPf.car_model}}" placeholder="Model (M2)">
+          <input class="oa-in" value="{{pf.car_year}}" onChange="{{onPf.car_year}}" placeholder="Year">
+        </div>
+        <input class="oa-in" value="{{pf.car_details}}" onChange="{{onPf.car_details}}" placeholder="Details — colour, mods, notes" style="margin-top:12px">
+      </div>
+
+      <div style="margin-top:20px;border-top:1px solid #2c2c2c;padding-top:20px">
+        <label class="oa-lbl">PICK AN AVATAR</label>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <sc-for list="{{avatarOpts}}" as="a" hint-placeholder-count="8">
+            <button onClick="{{a.pick}}" title="{{a.v}}" style="width:52px;height:52px;background:#1A1A1A;border:2px solid {{a.bord}};display:grid;place-items:center;cursor:pointer;padding:0"><img src="{{a.img}}" style="width:26px;height:26px" alt="{{a.v}}"></button>
+          </sc-for>
+        </div>
+      </div>
+
+      <button class="oa-btn" onClick="{{submitProfile}}" disabled="{{pfBusy}}" style="margin-top:26px">{{pfCta}}</button>
+      <sc-if value="{{pfMsg}}" hint-placeholder-val="{{false}}"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#FF6a6a;margin-top:14px">{{pfMsg}}</div></sc-if>
+      <button class="oa-btn2" onClick="{{signOut}}" style="margin-top:16px;width:100%">SIGN OUT</button>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ══════════════════ MAIN APP ══════════════════ -->
+<sc-if value="{{showApp}}" hint-placeholder-val="{{true}}">
+<nav style="position:sticky;top:0;z-index:50;background:rgba(15,15,15,.94);backdrop-filter:blur(10px);border-bottom:1px solid #3A3A3A">
+  <div style="max-width:1240px;margin:0 auto;display:flex;align-items:stretch;gap:20px;padding:0 20px;height:60px">
+    <button onClick="{{goHero}}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:0">
+      <span style="display:inline-flex;border-bottom:3px solid #E02020;padding-bottom:2px"><img src="img/oasis-garage-logo.png" alt="OASIS GARAGE" style="height:24px;display:block"></span>
+    </button>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:2px;overflow-x:auto;scrollbar-width:none">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="8">
+        <button onClick="{{n.go}}" style="background:none;border:none;border-bottom:3px solid {{n.line}};cursor:pointer;font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:1.5px;color:{{n.color}};padding:0 12px;white-space:nowrap">{{n.label}}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;padding-left:14px;border-left:1px solid #3A3A3A">
+      <img src="{{myAvatar}}" style="width:24px;height:24px" alt="me">
+      <span style="font-family:'Barlow Condensed';font-weight:700;font-size:15px;letter-spacing:.5px;color:#F5F5F5;white-space:nowrap">{{myName}}</span>
+      <button onClick="{{signOut}}" title="Sign out" style="background:none;border:1px solid #3A3A3A;color:#8f8f8f;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;padding:5px 8px;cursor:pointer">OUT</button>
+    </div>
+  </div>
+</nav>
+
+<section id="hero" data-screen-label="Hero" style="background:linear-gradient(180deg,#141414 0%,#0F0F0F 100%);border-bottom:1px solid #3A3A3A">
+  <div style="max-width:1240px;margin:0 auto;padding:64px 20px 56px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:44px;align-items:center">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px;margin-bottom:14px">SHOOT 01 · OFFICIAL CALL SHEET</div>
+      <h1 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(60px,9vw,116px);line-height:.9;letter-spacing:-1px;margin:0 0 18px;text-transform:uppercase">Midnight<br>Run<span style="color:#E02020">.</span></h1>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#C8C8C8;letter-spacing:1px;margin-bottom:22px">SAT · JUL 18 2026 &nbsp;—&nbsp; CALL TIME 06:30</div>
+      <div style="display:inline-block;background:#E02020;color:#0F0F0F;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:20px;letter-spacing:2px;padding:8px 18px 8px 14px;margin-bottom:34px">BUILD IT. OWN IT. DRIVE IT.</div>
+      <div style="display:flex;flex-wrap:wrap">
+        <div style="border-left:1px solid #3A3A3A;padding:2px 26px 2px 16px"><div style="font-family:'Barlow Condensed';font-weight:800;font-size:40px;line-height:1">{{statCrew}}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1.5px">CREW</div></div>
+        <div style="border-left:1px solid #3A3A3A;padding:2px 26px 2px 16px"><div style="font-family:'Barlow Condensed';font-weight:800;font-size:40px;line-height:1">{{statStops}}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1.5px">STOPS</div></div>
+        <div style="border-left:1px solid #3A3A3A;padding:2px 26px 2px 16px"><div style="font-family:'Barlow Condensed';font-weight:800;font-size:40px;line-height:1">{{statLooks}}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1.5px">LOOKS</div></div>
+        <div style="border-left:1px solid #3A3A3A;padding:2px 26px 2px 16px"><div style="font-family:'Barlow Condensed';font-weight:800;font-size:40px;line-height:1">{{statCars}}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1.5px">CARS</div></div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6a6a6a;letter-spacing:.5px;margin-top:30px">// LIVE — CREW, AVAILABILITY, VISION &amp; CHAT ARE MEMBER-DRIVEN VIA SUPABASE.</div>
+    </div>
+    <div style="position:relative;border:1px solid #3A3A3A">
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#E02020;z-index:2"></div>
+      <div style="height:420px">
+        <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="hero-car" src="{{heroSrc}}" shape="rect" placeholder="HERO CAR SHOT — admin adds via Photos" style="width:100%;height:100%;display:block" hint-size="100%,420px"></x-import>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="itinerary" data-screen-label="Itinerary" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">01 / ITINERARY</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Run of Show</h2>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#C8C8C8;letter-spacing:1px">{{ clockLabel }}</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <sc-for list="{{ stops }}" as="s" hint-placeholder-count="5">
+      <div id="stop-{{$index}}" onClick="{{s.pick}}" style="display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;background:{{s.cardBg}};border:1px solid {{s.cardBord}};padding:20px 22px;cursor:pointer;opacity:{{s.dim}};transition:border-color .2s,opacity .2s" style-hover="border-color:#E02020">
+        <div style="min-width:88px">
+          <div style="font-family:'Barlow Condensed';font-weight:800;font-size:34px;line-height:1">{{s.arrive}}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f;letter-spacing:1px;margin-top:4px">SHOOT {{s.win}}</div>
+        </div>
+        <div style="flex:1;min-width:220px">
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020">{{s.idx}}</span>
+            <span style="font-family:'Barlow Condensed';font-weight:700;font-size:26px;letter-spacing:1px">{{s.name}}</span>
+          </div>
+          <div style="font-size:14px;color:#C8C8C8;margin-top:6px">{{s.what}}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7a7a7a;letter-spacing:.5px;margin-top:8px">▸ {{s.addr}}</div>
+        </div>
+        <div style="margin-left:auto">
+          <span style="display:inline-block;background:{{s.bBg}};color:{{s.bCol}};border:1px solid {{s.bBord}};font-family:'Barlow Condensed';font-weight:700;font-size:14px;letter-spacing:2px;padding:6px 14px;animation:{{s.anim}}">{{s.bTxt}}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{noStops}}" hint-placeholder-val="{{false}}"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a;padding:24px 0">No stops yet.<sc-if value="{{isAdmin}}" hint-placeholder-val="{{false}}"> Add them in the ADMIN panel.</sc-if></div></sc-if>
+</section>
+
+<section id="map" data-screen-label="Road-trip map" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">02 / ROAD-TRIP MAP</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">The Route</h2>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a;letter-spacing:1px">DRAG TO ORBIT · SCROLL TO ZOOM · TAP A PIN</span>
+  </div>
+  <div style="position:relative;border:1px solid #3A3A3A;background:#131313">
+    <div style="position:absolute;top:12px;right:16px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5a5a5a;letter-spacing:1.5px;z-index:2;pointer-events:none">STYLIZED 3D · NOT TO SCALE</div>
+    <div style="height:clamp(380px,52vw,560px)">
+      <x-import component-from-global-scope="oasis-map-3d" from="./oasis-map-3d.js" stops="{{stopsJson}}" sel="{{selStr}}" prog="{{progStr}}" leg="{{legStr}}" motion="{{motionStr}}" style="width:100%;height:100%;display:block" hint-size="100%,560px"></x-import>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;border:1px solid #3A3A3A;border-top:none;background:#161616;padding:14px 18px">
+    <sc-if value="{{hasSel}}" hint-placeholder-val="{{false}}">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020;letter-spacing:1px">{{selIdx}} · {{selTime}}</span>
+      <span style="font-family:'Barlow Condensed';font-weight:700;font-size:20px;letter-spacing:1px">{{selName}}</span>
+      <span style="font-size:13px;color:#C8C8C8">{{selWhat}}</span>
+      <span style="flex:1"></span>
+      <sc-if value="{{isAdmin}}" hint-placeholder-val="{{false}}">
+        <span style="display:inline-flex;align-items:center;gap:8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#E02020;letter-spacing:1.5px">◆ ADMIN · AREA TYPE</span>
+          <select value="{{selType}}" onChange="{{onType}}" style="background:#1A1A1A;border:1px solid #3A3A3A;color:#F5F5F5;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px;padding:7px 10px;cursor:pointer;outline:none">
+            <sc-for list="{{ typeOpts }}" as="o" hint-placeholder-count="8">
+              <option value="{{o.v}}">{{o.label}}</option>
+            </sc-for>
+          </select>
+        </span>
+      </sc-if>
+      <sc-if value="{{notAdmin}}" hint-placeholder-val="{{false}}">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f;letter-spacing:1px">AREA · {{selTypeLabel}}</span>
+      </sc-if>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f;letter-spacing:1px">{{selCrew}} HERE · SEE CHECKLIST</span>
+    </sc-if>
+    <sc-if value="{{noSel}}" hint-placeholder-val="{{true}}">
+      <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1px"><span style="width:10px;height:10px;background:#E02020;display:inline-block"></span>DONE / ON SET</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1px"><span style="width:10px;height:10px;border:2px solid #E02020;display:inline-block"></span>UP NEXT</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1px"><span style="width:10px;height:10px;border:2px solid #4a4a4a;display:inline-block"></span>LATER</span>
+      <span style="flex:1"></span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6a6a6a;letter-spacing:1px">{{mapHint}}</span>
+    </sc-if>
+  </div>
+</section>
+
+<section id="mood" data-screen-label="Creative direction board" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:22px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">03 / CREATIVE DIRECTION</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">The Vision</h2>
+    <span style="flex:1"></span>
+    <button onClick="{{toggleVisionForm}}" class="oa-btn2">{{visionFormCta}}</button>
+  </div>
+
+  <sc-if value="{{showVisionForm}}" hint-placeholder-val="{{false}}">
+    <div style="background:#141414;border:1px solid #3A3A3A;padding:18px;margin-bottom:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+      <div><label class="oa-lbl">TYPE</label><select class="oa-in" value="{{vf.type}}" onChange="{{onVf.type}}"><sc-for list="{{visionTypeOpts}}" as="o" hint-placeholder-count="3"><option value="{{o.v}}">{{o.label}}</option></sc-for></select></div>
+      <div><label class="oa-lbl">TITLE *</label><input class="oa-in" value="{{vf.title}}" onChange="{{onVf.title}}" placeholder="ROLLING SHOT — LOW 50MM"></div>
+      <div style="grid-column:1/-1"><label class="oa-lbl">DESCRIPTION</label><input class="oa-in" value="{{vf.description}}" onChange="{{onVf.description}}" placeholder="What the shot should feel like"></div>
+      <div><label class="oa-lbl">SOURCE LINK</label><input class="oa-in" value="{{vf.source_link}}" onChange="{{onVf.source_link}}" placeholder="https://…"></div>
+      <div><label class="oa-lbl">IMAGE URL (optional)</label><input class="oa-in" value="{{vf.image_url}}" onChange="{{onVf.image_url}}" placeholder="https://…jpg"></div>
+      <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center"><button class="oa-btn" style="width:auto" onClick="{{addVision}}">ADD CARD</button><sc-if value="{{vfMsg}}" hint-placeholder-val="{{false}}"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#FF6a6a">{{vfMsg}}</span></sc-if></div>
+    </div>
+  </sc-if>
+
+  <div style="display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap">
+    <sc-for list="{{ moodChips }}" as="c" hint-placeholder-count="4">
+      <button onClick="{{c.pick}}" style="background:{{c.bg}};color:{{c.col}};border:1px solid {{c.bord}};font-family:'Barlow Condensed';font-weight:700;font-size:14px;letter-spacing:2px;padding:7px 18px;cursor:pointer">{{c.label}}</button>
+    </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:14px;grid-auto-flow:dense">
+    <sc-for list="{{ moodCards }}" as="m" hint-placeholder-count="9">
+      <div style="background:#1A1A1A;border:1px solid #2c2c2c;display:flex;flex-direction:column;position:relative" style-hover="border-color:#E02020">
+        <sc-if value="{{m.canDelete}}" hint-placeholder-val="{{false}}"><button onClick="{{m.remove}}" title="Delete" style="position:absolute;top:6px;right:6px;z-index:3;background:rgba(15,15,15,.8);border:1px solid #3A3A3A;color:#E02020;font-family:'JetBrains Mono',monospace;font-size:12px;width:24px;height:24px;cursor:pointer;line-height:1">✕</button></sc-if>
+        <div style="height:{{m.h}}px">
+          <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{m.slot}}" src="{{m.src}}" shape="rect" placeholder="{{m.ph}}" style="width:100%;height:100%;display:block" hint-size="100%,200px"></x-import>
+        </div>
+        <div style="padding:14px 14px 16px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="background:{{m.tBg}};color:{{m.tCol}};border:1px solid {{m.tBord}};font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;padding:3px 8px">{{m.t}}</span>
+            <span style="flex:1"></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#6a6a6a;letter-spacing:1px">{{m.by}}</span>
+          </div>
+          <div style="font-family:'Barlow Condensed';font-weight:700;font-size:19px;letter-spacing:.5px;line-height:1.1">{{m.title}}</div>
+          <div style="font-size:13px;color:#C8C8C8;line-height:1.45;text-wrap:pretty">{{m.d}}</div>
+          <a href="{{m.link}}" target="_blank" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px">{{m.linkLabel}}</a>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{noVision}}" hint-placeholder-val="{{false}}"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a;padding:24px 0">No vision cards match this filter yet — hit + ADD VISION.</div></sc-if>
+</section>
+
+<section id="crew" data-screen-label="Crew roster" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">04 / CREW ROSTER</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Who&#39;s Rolling</h2>
+    <span style="flex:1"></span>
+    <button onClick="{{toggleCrew}}" class="oa-btn2" style="border-color:{{crewBtnBord}};color:{{crewBtnCol}}">{{crewBtnLabel}}</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:14px">
+    <sc-for list="{{ crew }}" as="c" hint-placeholder-count="8">
+      <div style="background:#1A1A1A;border:1px solid {{c.bord}};display:flex;flex-direction:column" style-hover="border-color:#E02020">
+        <div style="display:flex;align-items:center;gap:12px;padding:16px 16px 12px">
+          <div style="width:42px;height:42px;border:2px solid #E02020;display:grid;place-items:center;flex-shrink:0"><img src="{{c.avatar}}" style="width:24px;height:24px" alt="{{c.n}}"></div>
+          <div style="min-width:0">
+            <div style="font-family:'Barlow Condensed';font-weight:700;font-size:22px;letter-spacing:.5px;line-height:1">{{c.n}}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#E02020;letter-spacing:2px;margin-top:5px">{{c.role}}</div>
+          </div>
+        </div>
+        <div style="height:140px;border-top:1px solid #2c2c2c;border-bottom:1px solid #2c2c2c">
+          <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{c.slot}}" src="{{c.src}}" shape="rect" placeholder="{{c.ph}}" style="width:100%;height:100%;display:block" hint-size="100%,140px"></x-import>
+        </div>
+        <div style="padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7a7a7a;letter-spacing:2px;margin-bottom:4px">MACHINE</div>
+            <div style="font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:1px">{{c.car}}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;margin-top:3px">{{c.carD}}</div>
+          </div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7a7a7a;letter-spacing:2px;margin-bottom:6px">WARDROBE · {{c.loc}}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ c.fits }}" as="f" hint-placeholder-count="2">
+                <span style="background:#232323;border:1px solid #3A3A3A;color:#F5F5F5;font-size:12px;padding:4px 10px">{{f}}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{noCrew}}" hint-placeholder-val="{{false}}"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a;padding:24px 0">No crew on the roster yet — hit JOIN CREW to add your card.</div></sc-if>
+</section>
+
+<section id="avail" data-screen-label="Availability" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">05 / AVAILABILITY</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Who&#39;s Free When</h2>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020;letter-spacing:1px">{{fullCrewLabel}}</span>
+  </div>
+
+  <div style="background:#141414;border:1px solid #3A3A3A;padding:16px 18px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">
+    <div><div class="oa-lbl">YOUR FREE WINDOW</div><div style="display:flex;gap:8px;align-items:center">
+      <select class="oa-in" style="width:auto" value="{{af.start_hour}}" onChange="{{onAf.start_hour}}"><sc-for list="{{hourOpts}}" as="o" hint-placeholder-count="25"><option value="{{o.v}}">{{o.label}}</option></sc-for></select>
+      <span style="font-family:'JetBrains Mono',monospace;color:#7a7a7a">→</span>
+      <select class="oa-in" style="width:auto" value="{{af.end_hour}}" onChange="{{onAf.end_hour}}"><sc-for list="{{hourOpts}}" as="o" hint-placeholder-count="25"><option value="{{o.v}}">{{o.label}}</option></sc-for></select>
+      <button class="oa-btn" style="width:auto" onClick="{{addAvail}}">ADD</button>
+    </div></div>
+    <div style="flex:1;min-width:200px"><div class="oa-lbl">YOUR WINDOWS</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <sc-for list="{{myWindows}}" as="w" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:8px;background:#232323;border:1px solid #3A3A3A;padding:5px 10px;font-family:'JetBrains Mono',monospace;font-size:12px">{{w.label}}<button onClick="{{w.remove}}" style="background:none;border:none;color:#E02020;cursor:pointer;font-size:13px;padding:0">✕</button></span></sc-for>
+        <sc-if value="{{noMyWindows}}" hint-placeholder-val="{{false}}"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a">None set — add one so the crew can see you.</span></sc-if>
+      </div>
+      <sc-if value="{{availMsg}}" hint-placeholder-val="{{false}}"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#FF6a6a;margin-top:8px">{{availMsg}}</div></sc-if>
+    </div>
+  </div>
+
+  <sc-if value="{{hasAvail}}" hint-placeholder-val="{{true}}">
+  <div style="overflow-x:auto">
+    <div style="min-width:780px">
+      <div style="display:grid;grid-template-columns:170px repeat(16,1fr);gap:3px;margin-bottom:6px">
+        <div></div>
+        <sc-for list="{{ hourLabels }}" as="h" hint-placeholder-count="16">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7a7a7a;text-align:left">{{h.t}}</div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <sc-for list="{{ availRows }}" as="r" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:170px repeat(16,1fr);gap:3px;align-items:center">
+            <div style="padding-right:12px"><span style="font-family:'Barlow Condensed';font-weight:700;font-size:16px;letter-spacing:.5px">{{r.n}}</span> <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#7a7a7a;letter-spacing:1px">{{r.role}}</span></div>
+            <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="16">
+              <div title="{{c.tip}}" style="height:26px;background:{{c.bg}};box-shadow:{{c.sh}}"></div>
+            </sc-for>
+          </div>
+        </sc-for>
+        <div style="display:grid;grid-template-columns:170px repeat(16,1fr);gap:3px;align-items:center;margin-top:8px;border-top:1px solid #3A3A3A;padding-top:10px">
+          <div style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:16px;letter-spacing:1px;color:#E02020">FULL CREW</div>
+          <sc-for list="{{ combined }}" as="c" hint-placeholder-count="16">
+            <div title="{{c.tip}}" style="height:26px;background:{{c.bg}}"></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center">
+    <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8"><span style="width:12px;height:12px;background:#2E2E2E;display:inline-block"></span>FREE</span>
+    <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8"><span style="width:12px;height:12px;background:repeating-linear-gradient(45deg,#141414 0 3px,#1d1d1d 3px 6px);display:inline-block"></span>UNAVAILABLE</span>
+    <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8"><span style="width:12px;height:12px;background:#E02020;display:inline-block"></span>ALL FREE</span>
+  </div>
+  </sc-if>
+  <sc-if value="{{noAvail}}" hint-placeholder-val="{{false}}"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a;padding:8px 0 24px">No availability set yet — add your window above and the grid fills in.</div></sc-if>
+</section>
+
+<section id="checklist" data-screen-label="Location checklist" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">06 / LOCATION CHECKLIST</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Boots on Ground</h2>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7a7a7a;letter-spacing:1px">TAP A STOP TO CONFIRM YOU&#39;LL BE THERE</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+    <sc-for list="{{ checkCards }}" as="l" hint-placeholder-count="5">
+      <div style="background:#1A1A1A;border:1px solid #2c2c2c;padding:18px">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020">{{l.idx}}</span>
+          <span style="font-family:'Barlow Condensed';font-weight:700;font-size:21px;letter-spacing:1px">{{l.name}}</span>
+          <span style="flex:1"></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f">{{l.time}}</span>
+        </div>
+        <div style="height:4px;background:#2a2a2a;margin:12px 0 6px"><div style="height:100%;background:#E02020;width:{{l.pct}}"></div></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7a7a7a;letter-spacing:1.5px;margin-bottom:12px">{{l.cnt}} CONFIRMED</div>
+        <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
+          <sc-for list="{{ l.rows }}" as="p" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:11px;min-height:24px">
+              <span style="width:16px;height:16px;border:1.5px solid #E02020;background:#E02020;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">✓</span>
+              <span style="font-size:14px;font-weight:600">{{p.n}}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#7a7a7a;letter-spacing:1.5px">{{p.role}}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{l.empty}}" hint-placeholder-val="{{false}}"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6a6a6a">Nobody yet.</span></sc-if>
+        </div>
+        <button onClick="{{l.toggle}}" style="width:100%;background:{{l.btnBg}};color:{{l.btnCol}};border:1px solid #E02020;font-family:'Barlow Condensed';font-weight:700;font-size:14px;letter-spacing:1.5px;padding:9px;cursor:pointer">{{l.btnLabel}}</button>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section id="chat" data-screen-label="Group chat" style="max-width:1240px;margin:0 auto;padding:76px 20px 40px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #3A3A3A;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">07 / GROUP CHAT</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Comms</h2>
+  </div>
+  <div style="max-width:780px;border:1px solid #3A3A3A;background:#141414">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #2c2c2c">
+      <span style="width:9px;height:9px;background:#E02020;border-radius:50%;animation:blip 1.8s ease-in-out infinite"></span>
+      <span style="font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:1.5px">#MIDNIGHT-RUN</span>
+      <span style="flex:1"></span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f;letter-spacing:1px">{{onlineLabel}}</span>
+    </div>
+    <div id="chatlog" style="height:430px;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px">
+      <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="6">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:34px;height:34px;background:{{m.avBg}};color:{{m.avCol}};border:1px solid {{m.avBord}};display:grid;place-items:center;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:13px;flex-shrink:0">{{m.i}}</div>
+          <div style="min-width:0">
+            <div style="display:flex;gap:10px;align-items:baseline"><span style="font-family:'Barlow Condensed';font-weight:700;font-size:16px;letter-spacing:.5px;color:{{m.nCol}}">{{m.n}}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6a6a6a">{{m.t}}</span></div>
+            <div style="font-size:14px;color:#E8E8E8;line-height:1.5;margin-top:3px;text-wrap:pretty">{{m.m}}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:10px;padding:14px 18px;border-top:1px solid #2c2c2c">
+      <input value="{{draft}}" onChange="{{onDraft}}" onKeyDown="{{onKey}}" placeholder="Message the crew…" style="flex:1;background:#1A1A1A;border:1px solid #3A3A3A;color:#F5F5F5;font-family:Barlow,sans-serif;font-size:14px;padding:11px 14px;outline:none;min-width:0">
+      <button onClick="{{send}}" style="background:#E02020;color:#fff;border:none;font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:16px;letter-spacing:2px;padding:0 26px;cursor:pointer" style-hover="background:#c41a1a">SEND</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ ADMIN PANEL (admin only) ══════════════════ -->
+<sc-if value="{{isAdmin}}" hint-placeholder-val="{{false}}">
+<section id="admin" data-screen-label="Admin" style="max-width:1240px;margin:0 auto;padding:76px 20px 32px">
+  <div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid #E02020;padding-bottom:14px;margin-bottom:30px">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E02020;letter-spacing:2px">◆ / ADMIN</span>
+    <h2 style="font-family:'Barlow Condensed';font-style:italic;font-weight:800;font-size:clamp(34px,5vw,52px);margin:0;text-transform:uppercase;letter-spacing:.5px">Control Room</h2>
+  </div>
+
+  <!-- STOP / MAP EDITOR -->
+  <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020;letter-spacing:2px;margin-bottom:14px">STOPS &amp; MAP PINS</div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+    <sc-for list="{{ adminStops }}" as="s" hint-placeholder-count="5">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:#1A1A1A;border:1px solid #2c2c2c;padding:12px 14px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E02020">{{s.idx}}</span>
+        <span style="font-family:'Barlow Condensed';font-weight:700;font-size:18px;letter-spacing:1px;min-width:160px">{{s.name}}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8f8f8f">{{s.arrive}} · {{s.areaLabel}}</span>
+        <span style="flex:1"></span>
+        <button onClick="{{s.edit}}" class="oa-btn2">EDIT</button>
+      </div>
+    </sc-for>
+  </div>
+  <button onClick="{{addStop}}" class="oa-btn" style="width:auto">+ ADD STOP</button>
+
+  <sc-if value="{{editingStop}}" hint-placeholder-val="{{false}}">
+    <div style="background:#141414;border:1px solid #E02020;padding:18px;margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">
+      <div style="grid-column:1/-1;font-family:'JetBrains Mono',monospace;font-size:11px;color:#E02020;letter-spacing:2px">EDITING STOP</div>
+      <div><label class="oa-lbl">NAME</label><input class="oa-in" value="{{sb.name}}" onChange="{{onSb.name}}"></div>
+      <div><label class="oa-lbl">ADDRESS</label><input class="oa-in" value="{{sb.addr}}" onChange="{{onSb.addr}}"></div>
+      <div style="grid-column:1/-1"><label class="oa-lbl">SHOT DESCRIPTION</label><input class="oa-in" value="{{sb.what}}" onChange="{{onSb.what}}" placeholder="Rolling shots · car-to-car · drone passes"></div>
+      <div><label class="oa-lbl">ARRIVE</label><input class="oa-in" value="{{sb.arrive}}" onChange="{{onSb.arrive}}" placeholder="06:30"></div>
+      <div><label class="oa-lbl">SHOOT WINDOW</label><input class="oa-in" value="{{sb.win}}" onChange="{{onSb.win}}" placeholder="07:00–08:00"></div>
+      <div><label class="oa-lbl">START (min)</label><input class="oa-in" value="{{sb.s}}" onChange="{{onSb.s}}" placeholder="390"></div>
+      <div><label class="oa-lbl">END (min)</label><input class="oa-in" value="{{sb.e}}" onChange="{{onSb.e}}" placeholder="480"></div>
+      <div><label class="oa-lbl">MAP X</label><input class="oa-in" value="{{sb.x}}" onChange="{{onSb.x}}"></div>
+      <div><label class="oa-lbl">MAP Y</label><input class="oa-in" value="{{sb.y}}" onChange="{{onSb.y}}"></div>
+      <div><label class="oa-lbl">AREA TYPE</label><select class="oa-in" value="{{sb.area_type}}" onChange="{{onSb.area_type}}"><sc-for list="{{typeOpts}}" as="o" hint-placeholder-count="8"><option value="{{o.v}}">{{o.label}}</option></sc-for></select></div>
+      <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="oa-btn" style="width:auto" onClick="{{saveStop}}">SAVE</button>
+        <button class="oa-btn2" onClick="{{cancelStop}}">CANCEL</button>
+        <button class="oa-btn2" onClick="{{deleteStop}}" style="border-color:#E02020;color:#E02020">DELETE</button>
+        <sc-if value="{{stopMsg}}" hint-placeholder-val="{{false}}"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#FF6a6a">{{stopMsg}}</span></sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- PHOTO MANAGER -->
+  <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E02020;letter-spacing:2px;margin:34px 0 14px">PHOTOS · UPLOAD / REPLACE</div>
+  <sc-if value="{{photoMsg}}" hint-placeholder-val="{{false}}"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#C8C8C8;margin-bottom:12px">{{photoMsg}}</div></sc-if>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
+    <sc-for list="{{ photoSlots }}" as="p" hint-placeholder-count="3">
+      <div style="background:#1A1A1A;border:1px solid #2c2c2c;padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8;letter-spacing:1px">{{p.label}}</div>
+        <div style="height:120px;background:#0F0F0F;border:1px solid #2c2c2c;display:grid;place-items:center;overflow:hidden">
+          <img src="{{p.src}}" style="width:100%;height:100%;object-fit:cover;display:{{p.imgDisp}}" alt="">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5a5a5a;display:{{p.emptyDisp}}">NO IMAGE</span>
+        </div>
+        <input type="file" accept="image/*" onChange="{{p.onFile}}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#C8C8C8">
+        <sc-if value="{{p.hasImg}}" hint-placeholder-val="{{false}}"><button onClick="{{p.remove}}" class="oa-btn2" style="border-color:#E02020;color:#E02020">REMOVE</button></sc-if>
+      </div>
+    </sc-for>
+  </div>
+</section>
+</sc-if>
+
+<footer style="border-top:1px solid #3A3A3A;margin-top:40px">
+  <div style="max-width:1240px;margin:0 auto;padding:34px 20px;display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+    <span style="display:inline-flex;border-bottom:3px solid #E02020;padding-bottom:2px"><img src="img/oasis-garage-logo.png" alt="OASIS GARAGE" style="height:18px;display:block"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7a7a7a;letter-spacing:1px">BUILD IT. OWN IT. DRIVE IT.</span>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5a5a5a;letter-spacing:1px">MEMBER-DRIVEN · SUPABASE · V1.0</span>
+  </div>
+</footer>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;simulatedTime&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Auto&quot;,&quot;06:45&quot;,&quot;09:30&quot;,&quot;13:00&quot;,&quot;16:00&quot;,&quot;19:30&quot;,&quot;21:30&quot;],&quot;default&quot;:&quot;Auto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Shoot-day demo&quot;,&quot;description&quot;:&quot;Preview the live itinerary + map state at a given time of day&quot;},&quot;routeMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Shoot-day demo&quot;,&quot;description&quot;:&quot;Animate the route line and travel dot on the map&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this._uid=null; this._ch=null; this._loadedFor=null;
+    this.ICONS={
+      helmet:'<path d="M4 14a8 8 0 0 1 16 0v2H4z"/><path d="M4 14h9a3 3 0 0 0 3-3"/>',
+      wheel:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v3M12 17v3M4 12h3M17 12h3"/>',
+      piston:'<rect x="8" y="3" width="8" height="8"/><path d="M10 11v4M14 11v4M9 15h6v5H9z"/>',
+      wrench:'<path d="M15 4a4 4 0 0 0-5 5l-6 6 2 2 6-6a4 4 0 0 0 5-5l-2 2-2-2 2-2z"/>',
+      flag:'<path d="M5 3v18"/><path d="M5 4h12l-2 4 2 4H5z"/>',
+      bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+      gauge:'<path d="M4 15a8 8 0 0 1 16 0"/><path d="M12 15l4-4"/><circle cx="12" cy="15" r="1"/>',
+      key:'<circle cx="8" cy="8" r="4"/><path d="M11 11l7 7M15 15l2-2M17 17l2-2"/>'
+    };
+    this.state={
+      active:'hero', sel:-1, filter:'ALL', draft:'',
+      authReady:false, session:null, profile:null,
+      authMode:'signin', authEmail:'', authPass:'', authMsg:'', authBusy:false,
+      pf:{real_name:'',display_name:'',shirt_size:'M',pants_size:'32',car_make:'',car_model:'',car_year:'',car_details:'',location:'',avatar_icon:'helmet',role:'CREW'},
+      pfMsg:'', pfBusy:false,
+      stops:[], profiles:[], availability:[], vision:[], signups:[], msgs:[], images:{},
+      dataReady:false,
+      showVisionForm:false, vf:{type:'PHOTO',title:'',description:'',source_link:'',image_url:''}, vfMsg:'',
+      af:{start_hour:8,end_hour:20}, availMsg:'',
+      stopBuf:null, stopMsg:'', photoMsg:''
+    };
+  }
+
+  /* ───── lifecycle ───── */
+  componentDidMount(){
+    window.__oasisMapBridge={onPick:i=>this.setState(s=>({sel:s.sel===i?-1:i}))};
+    this._sc=()=>{
+      const ids=['hero','itinerary','map','mood','crew','avail','checklist','chat','admin'];
+      let cur='hero';
+      for(const id of ids){const el=document.getElementById(id);if(el&&el.getBoundingClientRect().top<=96)cur=id}
+      if(cur!==this.state.active)this.setState({active:cur});
+    };
+    window.addEventListener('scroll',this._sc,{passive:true});
+    this._tick=setInterval(()=>this.forceUpdate(),60000);
+    this.init();
+  }
+  componentWillUnmount(){
+    window.removeEventListener('scroll',this._sc);clearInterval(this._tick);
+    this.teardown(); delete window.__oasisMapBridge;
+  }
+  componentDidUpdate(pp,ps){
+    if(ps&&Array.isArray(ps.msgs)&&this.state.msgs.length!==ps.msgs.length){
+      const el=document.getElementById('chatlog');if(el)el.scrollTop=el.scrollHeight;
+    }
+  }
+
+  /* ───── supabase boot ───── */
+  waitFor(cond,ms){return new Promise(res=>{const t0=Date.now();const tick=()=>{if(cond())return res(true);if(Date.now()-t0>ms)return res(false);setTimeout(tick,50)};tick()})}
+  async init(){
+    const cfg=window.OASIS_CFG||{};
+    const ok=await this.waitFor(()=>window.supabase&&window.supabase.createClient,10000);
+    if(!ok){this.setState({authReady:true,authMsg:'Could not load the Supabase library. Check your connection and refresh.'});return}
+    this.sb=window.supabase.createClient(cfg.url,cfg.anon,{auth:{persistSession:true,autoRefreshToken:true}});
+    const {data:{session}}=await this.sb.auth.getSession();
+    this.applySession(session);
+    this.sb.auth.onAuthStateChange((_e,s)=>this.applySession(s));
+  }
+  applySession(session){
+    this.setState({session,authReady:true});
+    const uid=session&&session.user?session.user.id:null;
+    if(uid&&uid!==this._loadedFor){this._loadedFor=uid;this._uid=uid;this.afterLogin();}
+    if(!uid){this._loadedFor=null;this._uid=null;this.setState({profile:null,dataReady:false});this.teardown();}
+  }
+  async afterLogin(){await this.loadProfile();await this.loadAll();this.subscribe();}
+
+  async loadProfile(){
+    try{const {data}=await this.sb.from('profiles').select('*').eq('id',this._uid).maybeSingle();this.setState({profile:data||null});}
+    catch(e){console.error('loadProfile',e);}
+  }
+  async loadAll(){
+    const sb=this.sb;
+    const q=(t,order)=>{let r=sb.from(t).select('*');if(order)r=r.order(order);return r.then(x=>x,()=>({data:[]}))};
+    const [stops,profiles,avail,vision,signups,msgs,images]=await Promise.all([
+      q('stops','sort_order'),q('profiles'),q('availability'),q('vision_cards','sort_order'),
+      q('location_signups'),q('messages','created_at'),q('images')
+    ]);
+    const imgMap={};(images.data||[]).forEach(r=>imgMap[r.slot_id]=r.url);
+    this.setState({stops:stops.data||[],profiles:profiles.data||[],availability:avail.data||[],
+      vision:vision.data||[],signups:signups.data||[],msgs:msgs.data||[],images:imgMap,dataReady:true});
+  }
+  subscribe(){
+    this.teardown();
+    const sb=this.sb, on=(t,cb)=>({event:'*',schema:'public',table:t});
+    this._ch=sb.channel('oasis-live')
+      .on('postgres_changes',on('messages'),()=>this.reload('messages'))
+      .on('postgres_changes',on('profiles'),()=>this.reload('profiles'))
+      .on('postgres_changes',on('availability'),()=>this.reload('availability'))
+      .on('postgres_changes',on('vision_cards'),()=>this.reload('vision'))
+      .on('postgres_changes',on('location_signups'),()=>this.reload('signups'))
+      .on('postgres_changes',on('stops'),()=>this.reload('stops'))
+      .on('postgres_changes',on('images'),()=>this.reload('images'))
+      .subscribe();
+  }
+  teardown(){if(this._ch){try{this.sb.removeChannel(this._ch)}catch(e){}this._ch=null}}
+  async reload(which){
+    const sb=this.sb;
+    const map={messages:['messages','created_at','msgs'],profiles:['profiles',null,'profiles'],
+      availability:['availability',null,'availability'],vision:['vision_cards','sort_order','vision'],
+      signups:['location_signups',null,'signups'],stops:['stops','sort_order','stops'],images:['images',null,'images']};
+    const [tbl,order,key]=map[which];
+    let r=sb.from(tbl).select('*');if(order)r=r.order(order);
+    let data=[];try{const res=await r;data=res.data||[]}catch(e){return}
+    if(which==='images'){const m={};data.forEach(x=>m[x.slot_id]=x.url);this.setState({images:m});return}
+    this.setState({[key]:data});
+    if(which==='profiles')this.loadProfile();
+  }
+
+  /* ───── helpers ───── */
+  initialsOf(name){const p=(name||'').trim().split(/\s+/).filter(Boolean);if(!p.length)return '??';if(p.length===1)return p[0].slice(0,2).toUpperCase();return (p[0][0]+p[1][0]).toUpperCase()}
+  icon(name,color){const inner=this.ICONS[name]||this.ICONS.helmet;const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="'+(color||'#F5F5F5')+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';return 'data:image/svg+xml,'+encodeURIComponent(svg)}
+  carStr(p){return [p.car_year,p.car_make,p.car_model].filter(Boolean).join(' ').toUpperCase().trim()}
+  nowMin(){const t=this.props.simulatedTime||'Auto';if(t!=='Auto'){const[a,b]=t.split(':');return +a*60+ +b}const d=new Date();return d.getHours()*60+d.getMinutes()}
+  isAdmin(){return !!(this.state.profile&&this.state.profile.is_admin)}
+  set(k,v){this.setState({[k]:v})}
+  setObj(obj,k,e){const v=e.target.value;this.setState(s=>({[obj]:{...(s[obj]||{}),[k]:v}}))}
+
+  /* ───── auth handlers ───── */
+  async submitAuth(){
+    const {authEmail,authPass,authMode}=this.state;
+    if(!authEmail||!authPass){this.setState({authMsg:'Enter your email and password.'});return}
+    this.setState({authBusy:true,authMsg:''});
+    const creds={email:authEmail.trim(),password:authPass};
+    let res;
+    try{res=authMode==='signup'?await this.sb.auth.signUp(creds):await this.sb.auth.signInWithPassword(creds)}
+    catch(e){this.setState({authBusy:false,authMsg:String(e&&e.message||e)});return}
+    this.setState({authBusy:false});
+    if(res.error){this.setState({authMsg:res.error.message});return}
+    if(authMode==='signup'&&!res.data.session){this.setState({authMsg:'Account created. Check your email to confirm, then sign in.',authMode:'signin'});return}
+  }
+  async signOut(){try{await this.sb.auth.signOut()}catch(e){}}
+
+  /* ───── profile setup ───── */
+  async submitProfile(){
+    const pf=this.state.pf;
+    if(!pf.display_name.trim()){this.setState({pfMsg:'A display name is required.'});return}
+    this.setState({pfBusy:true,pfMsg:''});
+    const row={id:this._uid,real_name:pf.real_name.trim()||null,display_name:pf.display_name.trim(),
+      shirt_size:pf.shirt_size||null,pants_size:pf.pants_size||null,car_make:pf.car_make.trim()||null,
+      car_model:pf.car_model.trim()||null,car_year:pf.car_year?parseInt(pf.car_year,10):null,
+      car_details:pf.car_details.trim()||null,location:pf.location.trim()||null,
+      avatar_icon:pf.avatar_icon,role:pf.role||'CREW'};
+    let res;try{res=await this.sb.from('profiles').upsert(row)}catch(e){this.setState({pfBusy:false,pfMsg:String(e&&e.message||e)});return}
+    this.setState({pfBusy:false});
+    if(res.error){this.setState({pfMsg:res.error.message});return}
+    await this.loadProfile();await this.loadAll();
+  }
+
+  /* ───── crew ───── */
+  async toggleCrew(){const p=this.state.profile;if(!p)return;try{await this.sb.from('profiles').update({in_crew:!p.in_crew}).eq('id',this._uid)}catch(e){}await this.loadProfile();this.reload('profiles')}
+
+  /* ───── availability ───── */
+  async addAvail(){const {af}=this.state;const s=parseInt(af.start_hour,10),e=parseInt(af.end_hour,10);
+    if(!(e>s)){this.setState({availMsg:'End time must be after start time.'});return}
+    try{const {error}=await this.sb.from('availability').insert({user_id:this._uid,start_hour:s,end_hour:e});if(error){this.setState({availMsg:error.message});return}}catch(err){this.setState({availMsg:String(err)});return}
+    this.setState({availMsg:''});this.reload('availability')}
+  removeAvail(id){this.sb.from('availability').delete().eq('id',id).then(()=>this.reload('availability'),()=>{})}
+
+  /* ───── vision ───── */
+  async addVision(){const v=this.state.vf;if(!v.title.trim()){this.setState({vfMsg:'A title is required.'});return}
+    const row={owner_id:this._uid,type:v.type,title:v.title.trim(),description:v.description.trim()||null,
+      source_link:v.source_link.trim()||null,image_url:v.image_url.trim()||null,height:210};
+    try{const {error}=await this.sb.from('vision_cards').insert(row);if(error){this.setState({vfMsg:error.message});return}}catch(e){this.setState({vfMsg:String(e)});return}
+    this.setState({vf:{type:'PHOTO',title:'',description:'',source_link:'',image_url:''},showVisionForm:false,vfMsg:''});this.reload('vision')}
+  removeVision(id){this.sb.from('vision_cards').delete().eq('id',id).then(()=>this.reload('vision'),()=>{})}
+
+  /* ───── location signups ───── */
+  async toggleSignup(stopId){const mine=this.state.signups.find(x=>x.stop_id===stopId&&x.user_id===this._uid);
+    try{if(mine){await this.sb.from('location_signups').delete().eq('id',mine.id)}
+    else{await this.sb.from('location_signups').insert({user_id:this._uid,stop_id:stopId})}}catch(e){}
+    this.reload('signups')}
+
+  /* ───── chat ───── */
+  async send(){const d=this.state.draft.trim();if(!d)return;const p=this.state.profile;const name=(p&&p.display_name)||'Crew';
+    this.setState({draft:''});
+    try{const {error}=await this.sb.from('messages').insert({user_id:this._uid,name,initials:this.initialsOf(name),body:d});if(error)console.error(error)}catch(e){console.error(e)}}
+
+  /* ───── admin: map area type ───── */
+  async onType(e){if(!this.isAdmin())return;const v=e.target.value;const st=this.state.stops[this.state.sel];if(!st)return;
+    try{await this.sb.from('stops').update({area_type:v}).eq('id',st.id)}catch(err){}this.reload('stops')}
+
+  /* ───── admin: stop editor ───── */
+  addStop(){const n=this.state.stops.length;this.setState({stopBuf:{id:null,sort_order:n,name:'NEW STOP',addr:'',what:'',arrive:'12:00',win:'12:00–13:00',s:720,e:780,x:400,y:300,up:true,area_type:'city'},stopMsg:''})}
+  editStop(st){this.setState({stopBuf:{...st},stopMsg:''})}
+  cancelStop(){this.setState({stopBuf:null,stopMsg:''})}
+  async saveStop(){const b=this.state.stopBuf;if(!b)return;
+    const row={sort_order:parseInt(b.sort_order,10)||0,name:b.name,addr:b.addr,what:b.what||null,arrive:b.arrive,win:b.win,
+      s:parseInt(b.s,10)||0,e:parseInt(b.e,10)||0,x:parseInt(b.x,10)||0,y:parseInt(b.y,10)||0,up:true,area_type:b.area_type};
+    let res;try{res=b.id?await this.sb.from('stops').update(row).eq('id',b.id):await this.sb.from('stops').insert(row)}catch(e){this.setState({stopMsg:String(e)});return}
+    if(res.error){this.setState({stopMsg:res.error.message});return}
+    this.setState({stopBuf:null,stopMsg:''});this.reload('stops')}
+  async deleteStop(){const b=this.state.stopBuf;if(!b){return}if(!b.id){this.setState({stopBuf:null});return}
+    try{await this.sb.from('stops').delete().eq('id',b.id)}catch(e){}this.setState({stopBuf:null});this.reload('stops')}
+
+  /* ───── admin: photos ───── */
+  async uploadPhoto(slotId,file){if(!file)return;
+    this.setState({photoMsg:'Uploading '+slotId+'…'});
+    const cfg=window.OASIS_CFG||{};const bucket=cfg.bucket||'shoot-photos';
+    const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+    const path=slotId.replace(/[^a-z0-9-]/gi,'_')+'-'+Date.now()+'.'+ext;
+    try{
+      const up=await this.sb.storage.from(bucket).upload(path,file,{upsert:true,cacheControl:'3600'});
+      if(up.error){this.setState({photoMsg:'Upload failed: '+up.error.message});return}
+      const {data:pub}=this.sb.storage.from(bucket).getPublicUrl(path);
+      const {error}=await this.sb.from('images').upsert({slot_id:slotId,url:pub.publicUrl,updated_by:this._uid});
+      if(error){this.setState({photoMsg:'Save failed: '+error.message});return}
+      this.setState({photoMsg:'Saved '+slotId+' ✓'});this.reload('images');
+    }catch(e){this.setState({photoMsg:'Error: '+String(e&&e.message||e)})}
+  }
+  removePhoto(slotId){this.sb.from('images').delete().eq('slot_id',slotId).then(()=>{this.setState({photoMsg:'Removed '+slotId});this.reload('images')},()=>{})}
+
+  /* ═════════════ RENDER ═════════════ */
+  renderVals(){
+    const st=this.state, S=st.stops, img=st.images, uid=this._uid, isAdmin=this.isAdmin();
+    const authReady=st.authReady, session=!!st.session, profile=st.profile;
+    const showLoading=!authReady;
+    const showAuth=authReady&&!session;
+    const showSetup=session&&!profile;
+    const showApp=session&&!!profile;
+    const pad=x=>('0'+x).slice(-2);
+    const now=this.nowMin();
+
+    // ---- itinerary / map ----
+    const raw=S.map(p=>now>=p.e?'wrapped':now>=p.s?'live':'future');
+    const ni=raw.indexOf('future');
+    const kind=raw.map((k,i)=>k==='future'?(i===ni?'next':'later'):k);
+    const BADGE={wrapped:['WRAPPED ✓','#1A1A1A','#8f8f8f','#3A3A3A'],live:['● ON SET','#E02020','#FFFFFF','#E02020'],next:['UP NEXT','transparent','#E02020','#E02020'],later:['LATER','transparent','#C8C8C8','#3A3A3A']};
+    const sel=st.sel;
+    const stops=S.map((p,i)=>{const k=kind[i],b=BADGE[k],isSel=sel===i;
+      return {...p,idx:'0'+(i+1),bTxt:b[0],bBg:b[1],bCol:b[2],bBord:b[3],
+        anim:k==='live'?'blip 1.6s ease-in-out infinite':'none',
+        cardBord:isSel?'#E02020':(k==='live'?'#7a1414':'#2c2c2c'),cardBg:k==='wrapped'?'#141414':'#1A1A1A',
+        dim:k==='wrapped'?0.55:1,pick:()=>this.setState({sel:isSel?-1:i})}});
+    // progress along route
+    let prog=0,leg=0;
+    if(S.length){const last=S.length-1;const seg=100/Math.max(1,last);
+      if(now>=S[last].e){prog=100;leg=Math.max(0,last-1)}
+      else if(now>S[0].s){for(let i=0;i<S.length;i++){if(now>=S[i].s&&(i===last||now<S[i+1].s)){
+        if(now<=S[i].e){prog=i*seg;leg=Math.min(i,Math.max(0,last-1))}
+        else{const fr=(now-S[i].e)/((S[i+1].s)-S[i].e);prog=i*seg+fr*seg;leg=Math.min(i,Math.max(0,last-1))}break}}}}
+    const TYPE_LABELS={industrial:'INDUSTRIAL / GARAGE',highway:'HIGHWAY / OVERPASS',harbor:'HARBOR / DOCKS',city:'CITY / DOWNTOWN',mountain:'MOUNTAIN / LOOKOUT',farmland:'FARMLAND',parking:'PARKING GARAGE',desert:'DESERT'};
+    const selStop=sel>=0?S[sel]:null;
+    const sim=(this.props.simulatedTime||'Auto')!=='Auto';
+
+    // ---- profiles / crew ----
+    const byId={};st.profiles.forEach(p=>byId[p.id]=p);
+    const crewList=st.profiles.filter(p=>p.in_crew);
+    const crew=crewList.map(p=>{const car=this.carStr(p);const fits=[];if(p.shirt_size)fits.push('SHIRT · '+p.shirt_size);if(p.pants_size)fits.push('PANTS · '+p.pants_size);
+      const isMe=p.id===uid;
+      return {n:p.display_name||'—',role:p.role||'CREW',car:car||'—',carD:p.car_details||'',
+        loc:p.location||'—',fits:fits.length?fits:['—'],slot:'car-'+p.id,src:img['car-'+p.id]||'',
+        ph:(car||'CAR')+' — admin adds photo',avatar:this.icon(p.avatar_icon||'helmet','#E02020'),
+        bord:isMe?'#E02020':'#2c2c2c'}});
+    const myProfile=profile;
+    const inCrew=!!(myProfile&&myProfile.in_crew);
+
+    // ---- availability ----
+    const HRS=Array.from({length:16},(_,i)=>6+i);
+    const availByUser={};st.availability.forEach(a=>{(availByUser[a.user_id]=availByUser[a.user_id]||[]).push(a)});
+    const availMembers=st.profiles.filter(p=>availByUser[p.id]&&availByUser[p.id].length);
+    const freeAt=(u,h)=>(availByUser[u]||[]).some(w=>h>=w.start_hour&&h<w.end_hour);
+    const availRows=availMembers.map(p=>({n:p.display_name||'—',role:p.role||'',
+      cells:HRS.map(h=>{const fr=freeAt(p.id,h);return {bg:fr?'#2E2E2E':'repeating-linear-gradient(45deg,#141414 0 4px,#1d1d1d 4px 8px)',
+        sh:'none',tip:(p.display_name||'')+' · '+pad(h)+':00 — '+(fr?'free':'unavailable')}})}));
+    const combined=HRS.map(h=>{const all=availMembers.length>0&&availMembers.every(p=>freeAt(p.id,h));
+      return {bg:all?'#E02020':'#1A1A1A',tip:pad(h)+':00 — '+(all?'all free':'not everyone free')}});
+    const hourLabels=HRS.map(h=>({t:h%2===0?pad(h):''}));
+    const myWins=(availByUser[uid]||[]).slice().sort((a,b)=>a.start_hour-b.start_hour).map(w=>({label:pad(w.start_hour)+':00–'+pad(w.end_hour)+':00',remove:()=>this.removeAvail(w.id)}));
+
+    // ---- vision ----
+    const f=st.filter;
+    const TB={VIDEO:['#E02020','#fff','#E02020'],EDIT:['transparent','#E02020','#E02020'],PHOTO:['transparent','#C8C8C8','#3A3A3A']};
+    const visSorted=st.vision.slice();
+    const moodCards=visSorted.filter(m=>f==='ALL'||m.type===f).map(m=>{const owner=m.owner_id?byId[m.owner_id]:null;
+      return {t:m.type,title:m.title,d:m.description||'',h:m.height||210,slot:'vision-'+m.id,
+        src:img['vision-'+m.id]||m.image_url||'',ph:m.type+' REF — admin can add image',
+        tBg:TB[m.type][0],tCol:TB[m.type][1],tBord:TB[m.type][2],
+        by:owner?('BY '+(owner.display_name||'').toUpperCase()):'HOUSE',
+        link:m.source_link||'#',linkLabel:m.source_link?'SOURCE LINK ↗':'NO SOURCE',
+        canDelete:(m.owner_id===uid&&!!uid)||isAdmin,remove:()=>this.removeVision(m.id)}});
+    const chips=['ALL','VIDEO','EDIT','PHOTO'].map(c=>({label:c,bg:f===c?'#E02020':'transparent',col:f===c?'#fff':'#C8C8C8',bord:f===c?'#E02020':'#3A3A3A',pick:()=>this.setState({filter:c})}));
+
+    // ---- checklist / signups ----
+    const signupsByStop={};st.signups.forEach(sg=>{(signupsByStop[sg.stop_id]=signupsByStop[sg.stop_id]||[]).push(sg)});
+    const totalMembers=Math.max(1,st.profiles.length);
+    const checkCards=S.map((p,i)=>{const list=(signupsByStop[p.id]||[]);const cnt=list.length;
+      const mine=list.some(sg=>sg.user_id===uid);
+      const rows=list.map(sg=>{const pr=byId[sg.user_id];return {n:pr?pr.display_name:'Member',role:pr?pr.role:''}});
+      return {idx:'0'+(i+1),name:p.name,time:p.arrive,cnt:cnt+' / '+totalMembers+' MEMBERS',
+        pct:Math.round(cnt/totalMembers*100)+'%',rows,empty:cnt===0,
+        btnLabel:mine?'✓ YOU\'RE CONFIRMED — TAP TO REMOVE':'I\'LL BE AT THIS STOP',
+        btnBg:mine?'#E02020':'transparent',btnCol:mine?'#fff':'#E02020',
+        toggle:()=>this.toggleSignup(p.id)}});
+
+    // ---- chat ----
+    const msgs=st.msgs.map(m=>{const me=!!uid&&m.user_id===uid;const d=m.created_at?new Date(m.created_at):null;
+      return {i:m.initials,n:m.name,m:m.body,t:d?pad(d.getHours())+':'+pad(d.getMinutes()):'',
+        avBg:me?'#E02020':'#232323',avCol:me?'#fff':'#C8C8C8',avBord:me?'#E02020':'#3A3A3A',nCol:me?'#E02020':'#F5F5F5'}});
+
+    // ---- nav ----
+    const navBase=[['itinerary','ITINERARY'],['map','MAP'],['mood','VISION'],['crew','CREW'],['avail','AVAILABILITY'],['checklist','CHECKLIST'],['chat','CHAT']];
+    if(isAdmin)navBase.push(['admin','ADMIN']);
+    const navItems=navBase.map(([id,label])=>({label,color:st.active===id?'#F5F5F5':'#909090',line:st.active===id?'#E02020':'transparent',go:()=>this.go(id)}));
+
+    // ---- admin: stops + photos ----
+    const adminStops=S.map((p,i)=>({idx:'0'+(i+1),name:p.name,arrive:p.arrive,areaLabel:TYPE_LABELS[p.area_type]||p.area_type,edit:()=>this.editStop(p)}));
+    const photoSlots=[];
+    const pushSlot=(id,label)=>{const src=img[id]||'';photoSlots.push({label,src,hasImg:!!src,imgDisp:src?'block':'none',emptyDisp:src?'none':'block',
+      onFile:e=>{const file=e.target.files&&e.target.files[0];this.uploadPhoto(id,file)},remove:()=>this.removePhoto(id)})};
+    pushSlot('hero-car','HERO CAR');
+    crewList.forEach(p=>pushSlot('car-'+p.id,(p.display_name||'Crew')+' · CAR'));
+    visSorted.forEach(m=>pushSlot('vision-'+m.id,'VISION · '+m.title));
+
+    // ---- form field setters ----
+    const mk=(objKey,fields)=>{const o={};fields.forEach(k=>o[k]=e=>this.setObj(objKey,k,e));return o};
+
+    return {
+      // gates
+      showLoading,showAuth,showSetup,showApp,isAdmin,notAdmin:!isAdmin,
+      // auth
+      authMode:st.authMode,authEmail:st.authEmail,authPass:st.authPass,authMsg:st.authMsg,authBusy:st.authBusy,
+      authCta:st.authBusy?'…':(st.authMode==='signup'?'CREATE ACCOUNT':'SIGN IN'),
+      signinBg:st.authMode==='signin'?'#E02020':'transparent',signinCol:st.authMode==='signin'?'#fff':'#909090',
+      signupBg:st.authMode==='signup'?'#E02020':'transparent',signupCol:st.authMode==='signup'?'#fff':'#909090',
+      setSignin:()=>this.setState({authMode:'signin',authMsg:''}),setSignup:()=>this.setState({authMode:'signup',authMsg:''}),
+      onAuthEmail:e=>this.set('authEmail',e.target.value),onAuthPass:e=>this.set('authPass',e.target.value),
+      onAuthKey:e=>{if(e.key==='Enter')this.submitAuth()},submitAuth:()=>this.submitAuth(),
+      // profile setup
+      pf:st.pf,pfMsg:st.pfMsg,pfBusy:st.pfBusy,pfCta:st.pfBusy?'…':'ENTER THE GARAGE',
+      onPf:mk('pf',['real_name','display_name','shirt_size','pants_size','car_make','car_model','car_year','car_details','location','role']),
+      roleOpts:['LEAD PHOTO','PHOTO','VIDEO','DRONE OP','MODEL','STYLIST','WHEELMAN','PRODUCER','EDITOR','CREW'].map(v=>({v,label:v})),
+      shirtOpts:['XS','S','M','L','XL','XXL'].map(v=>({v,label:v})),
+      pantsOpts:['28','30','32','34','36','38','40','S/M/L'].map(v=>({v,label:v})),
+      avatarOpts:Object.keys(this.ICONS).map(v=>({v,img:this.icon(v,st.pf.avatar_icon===v?'#E02020':'#C8C8C8'),bord:st.pf.avatar_icon===v?'#E02020':'#3A3A3A',pick:()=>this.setState(s=>({pf:{...s.pf,avatar_icon:v}}))})),
+      submitProfile:()=>this.submitProfile(),signOut:()=>this.signOut(),
+      // nav / me
+      navItems,goHero:()=>this.go('hero'),
+      myName:profile?profile.display_name:'',myAvatar:this.icon(profile?profile.avatar_icon:'helmet','#E02020'),
+      // hero stats
+      statCrew:pad(crew.length),statStops:pad(S.length),statLooks:pad(st.vision.length),statCars:pad(crewList.filter(p=>this.carStr(p)).length),
+      // itinerary
+      clockLabel:(sim?'SIM CLOCK ':'LIVE CLOCK ')+pad(Math.floor(now/60))+':'+pad(now%60),
+      stops,noStops:S.length===0,
+      // map
+      stopsJson:JSON.stringify(S.map((p,i)=>({n:p.name,t:p.arrive,x:p.x,y:p.y,k:kind[i],ty:p.area_type}))),
+      selStr:String(sel),progStr:String(Math.round(prog*10)/10),legStr:String(leg),motionStr:(this.props.routeMotion===false?'0':'1'),
+      hasSel:sel>=0,noSel:sel<0,selType:selStop?selStop.area_type:'',selTypeLabel:selStop?(TYPE_LABELS[selStop.area_type]||selStop.area_type):'',
+      onType:e=>this.onType(e),typeOpts:Object.keys(TYPE_LABELS).map(v=>({v,label:TYPE_LABELS[v]})),
+      selIdx:selStop?'0'+(sel+1):'',selTime:selStop?selStop.arrive:'',selName:selStop?selStop.name:'',selWhat:selStop?selStop.what:'',
+      selCrew:selStop?((signupsByStop[selStop.id]||[]).length):0,
+      mapHint:isAdmin?'TAP A PIN — SET ITS AREA TYPE (ADMIN)':'TAP A PIN — THE CAR DRIVES TO IT',
+      // vision
+      moodChips:chips,moodCards,noVision:moodCards.length===0,
+      showVisionForm:st.showVisionForm,visionFormCta:st.showVisionForm?'✕ CLOSE':'+ ADD VISION',
+      toggleVisionForm:()=>this.setState(s=>({showVisionForm:!s.showVisionForm})),
+      vf:st.vf,vfMsg:st.vfMsg,onVf:mk('vf',['type','title','description','source_link','image_url']),
+      visionTypeOpts:['PHOTO','VIDEO','EDIT'].map(v=>({v,label:v})),addVision:()=>this.addVision(),
+      // crew
+      crew,noCrew:crew.length===0,
+      crewBtnLabel:inCrew?'✓ ON THE ROSTER — LEAVE CREW':'JOIN CREW',crewBtnBord:inCrew?'#E02020':'#3A3A3A',crewBtnCol:inCrew?'#E02020':'#F5F5F5',
+      toggleCrew:()=>this.toggleCrew(),
+      // availability
+      hourOpts:Array.from({length:25},(_,i)=>({v:String(i),label:pad(i)+':00'})),
+      af:st.af,onAf:mk('af',['start_hour','end_hour']),addAvail:()=>this.addAvail(),availMsg:st.availMsg,
+      myWindows:myWins,noMyWindows:myWins.length===0,
+      hourLabels,availRows,combined,hasAvail:availMembers.length>0,noAvail:availMembers.length===0,
+      fullCrewLabel:availMembers.length?('FROM '+availMembers.length+' MEMBER'+(availMembers.length>1?'S':'')):'SET YOUR WINDOW',
+      // checklist
+      checkCards,
+      // chat
+      msgs,draft:st.draft,onDraft:e=>this.set('draft',e.target.value),onKey:e=>{if(e.key==='Enter')this.send()},send:()=>this.send(),
+      onlineLabel:st.profiles.length+' MEMBERS',
+      // admin
+      adminStops,addStop:()=>this.addStop(),editingStop:!!st.stopBuf,sb:st.stopBuf||{},
+      onSb:mk('stopBuf',['name','addr','what','arrive','win','s','e','x','y','area_type']),
+      saveStop:()=>this.saveStop(),cancelStop:()=>this.cancelStop(),deleteStop:()=>this.deleteStop(),stopMsg:st.stopMsg,
+      photoSlots,photoMsg:st.photoMsg,
+      // shared
+      heroSrc:img['hero-car']||''
+    };
+  }
+  go(id){const el=document.getElementById(id);if(!el)return;window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-64,behavior:'smooth'})}
+}
+</script>
+</body>
+</html>
